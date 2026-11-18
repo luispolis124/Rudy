@@ -1,0 +1,26 @@
+# . typos.toml — Source code spell checker configuration for Rudy
+
+[files]
+extend-exclude = [
+    "dist/",
+    "build/",
+    "stdlib/",
+    ".git/",
+    "*.pyc",
+]
+
+[default.extend-words]
+# Palavras-chave em português e termos específicos da Rudy que o corretor deve aceitar
+acao = "acao"
+senao = "senao"
+enquanto = "enquanto"
+entao = "entao"
+ler = "ler"
+aleatorio = "aleatorio"
+pausar = "pausar"
+salvar = "salvar"
+carregar = "carregar"
+limpar = "limpar"
+rudy = "rudy"
+luis = "luis"
+felipe = "felipe"
