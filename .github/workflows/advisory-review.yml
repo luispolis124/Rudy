@@ -1,0 +1,39 @@
+name: Security & Advisory Review
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+  schedule:
+    # Roda toda segunda-feira às 08:00 UTC para verificar novas vulnerabilidades conhecidas
+    - cron: '0 8 * * 1'
+
+jobs:
+  security-audit:
+    runs-on: ubuntu-22.04
+
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+
+    - name: Install Pip and Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install .
+
+    - name: Run Safety Check / Vulnerability Scan
+      run: |
+        # Instala a ferramenta de auditoria de dependências Python
+        pip install pip-audit
+        # Executa a varredura baseada no pyproject.toml e dependências instaladas
+        pip-audit --desc || true
