@@ -1,0 +1,23 @@
+# .codecov.yml — Codecov configuration for Rudy
+
+coverage:
+  status:
+    project:
+      default:
+        target: 80%
+        threshold: 1%
+    patch:
+      default:
+        target: 80%
+
+comment:
+  layout: "reach, diff, flags, files, footer"
+  behavior: default
+  require_changes: false
+
+ignore:
+  - "dist"
+  - "build"
+  - "stdlib"
+  - "docs"
+  - "examples"
