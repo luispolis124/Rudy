@@ -1,0 +1,26 @@
+{
+  "name": "rudy-vscode",
+  "displayName": "Rudy Language Support",
+  "description": "Official syntax highlighting and language support for the Rudy programming language (Bilingual PT/EN).",
+  "version": "1.0.0",
+  "publisher": "luispolis124",
+  "engines": {
+    "vscode": "^1.60.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [{
+      "id": "rudy",
+      "aliases": ["Rudy", "rudy"],
+      "extensions": [".rudy"],
+      "configuration": "./language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "rudy",
+      "scopeName": "source.rudy",
+      "path": "./syntaxes/rudy.tmLanguage.json"
+    }]
+  }
+}
