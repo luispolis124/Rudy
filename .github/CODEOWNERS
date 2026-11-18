@@ -1,0 +1,9 @@
+# Rudy Programming Language - Code Owners
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-customizing-your-workflow/managing-code-owners
+
+# O mantenedor principal é o único dono de todo o repositório
+* @luispolis124
+
+# Regras específicas (opcional, caso queira delegar pastas específicas no futuro)
+# /src/ @luispolis124
+# /.github/workflows/ @luispolis124
