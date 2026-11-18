@@ -538,10 +538,13 @@ class RudyRuntime:
                 for cmd in no.bloco_senao: self.executar(cmd)
 
 if __name__ == "__main__":
+    t_inicio = time.perf_counter()
     parser = Parser(CODIGO_EMBARCADO.split('\\n'))
     ast = parser.parse()
     runtime = RudyRuntime()
     runtime.executar(ast)
+    t_fim = time.perf_counter()
+    print(f"\\n[Rudy Benchmark] Tempo: {((t_fim - t_inicio) * 1000):.2f} ms")
 '''
 
     stub_filename = "rudy_temp_stub.py"
@@ -578,6 +581,9 @@ def main():
         
     print(f"--- Compilando e Executando {arquivo_path} com a Rudy (AST Engine) ---")
     
+    # Inicia o cronômetro em milissegundos
+    tempo_inicio = time.perf_counter()
+    
     # 1. Lexer (Geração de Tokens)
     tokens = lexer(codigo_fonte)
     
@@ -588,6 +594,12 @@ def main():
     # 3. Runtime (Execução baseada na AST)
     runtime = RudyRuntime()
     runtime.executar(ast)
+    
+    # Finaliza o cronômetro
+    tempo_fim = time.perf_counter()
+    tempo_total_ms = (tempo_fim - tempo_inicio) * 1000
+    
+    print(f"\n[Rudy Benchmark] Tempo de execução: {tempo_total_ms:.2f} ms")
 
 if __name__ == "__main__":
     main()
