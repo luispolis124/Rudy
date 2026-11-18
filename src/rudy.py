@@ -256,7 +256,11 @@ class RudyRuntime:
             idx = expr.index("(")
             prompt_expr = expr[idx+1:-1]
             prompt = self.avaliar_valor(prompt_expr)
-            return input(str(prompt))
+            try:
+                return input(str(prompt))
+            except KeyboardInterrupt:
+                print("\n[Rudy] Entrada interrompida pelo usuário.")
+                sys.exit(0)
 
         if (expr.startswith("random(") or expr.startswith("aleatorio(")) and expr.endswith(")"):
             idx = expr.index("(")
@@ -540,7 +544,11 @@ class RudyRuntime:
             time.sleep(float(self.avaliar_valor(expr[expr.index("(")+1:-1])))
             return 0
         if (expr.startswith("ask(") or expr.startswith("ler(")) and expr.endswith(")"):
-            return input(str(self.avaliar_valor(expr[expr.index("(")+1:-1])))
+            try:
+                return input(str(self.avaliar_valor(expr[expr.index("(")+1:-1])))
+            except KeyboardInterrupt:
+                print("\\n[Rudy] Entrada interrompida pelo usuário.")
+                sys.exit(0)
         if (expr.startswith("random(") or expr.startswith("aleatorio(")) and expr.endswith(")"):
             args = expr[expr.index("(")+1:-1].split(",")
             return random.randint(int(self.avaliar_valor(args[0])), int(self.avaliar_valor(args[1])))
