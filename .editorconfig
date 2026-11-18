@@ -1,9 +1,31 @@
-# EditorConfig para a Rudy
+# EditorConfig para a Rudy Programming Language
+# https://editorconfig.org
+
 root = true
 
+# Padrão global para todos os arquivos
 [*]
 indent_style = space
 indent_size = 4
 charset = utf-8
 trim_trailing_whitespace = true
 insert_final_newline = true
+end_of_line = lf
+
+# Scripts da Linguagem Rudy (.rudy) e Python (.py)
+[*.{rudy,py}]
+indent_size = 4
+
+# Arquivos de Marcação e Documentação (.md)
+[*.md]
+trim_trailing_whitespace = false
+indent_size = 4
+
+# Arquivos de Configuração e Dados (.json, .toml, .yaml, .yml)
+[*.{json,toml,yaml,yml}]
+indent_size = 2
+
+# Arquivos de Shell Script (.sh)
+[*.sh]
+end_of_line = lf
+indent_size = 4
