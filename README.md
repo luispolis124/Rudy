@@ -13,7 +13,7 @@
 
 ## About Rudy
 
-**Rudy** is a multipurpose programming language designed to unite **panoramic readability**, **cross-platform portability** (PC and Termux/Android), and **complete flexibility**. Inspired by the **Maned Wolf** (*Chrysocyon brachyurus*) — our official mascot and symbol of the Brazilian Cerrado —, Rudy empowers developers to build anything: from text-based games (RPGs, Roguelikes) and ASCII animations to utilities, calculators, and system scripts.
+**Rudy** is a multipurpose programming language designed to unite **panoramic readability**, **cross-platform portability** (PC and Termux/Android), and **complete flexibility**. Inspired by the **Maned Wolf** (*Chrysocyon brachyurus*), Rudy empowers developers to build anything: from text-based games and ASCII animations to utilities, calculators, and system scripts.
 
 * **Bilingual Syntax Support:** Write natively using either English keywords (`action`, `write`, `while`, `if`, `else`, `ask`) or Portuguese keywords (`acao`, `escrever`, `enquanto`, `se`, `senao`, `ler`).
 * **Multipurpose Engine:** Capable of handling logic, math, random generation, file persistence (`save`/`load`), and terminal timing (`sleep`/`clear`).
@@ -46,7 +46,6 @@ action main() {
         write("Status: Warning! HP is low!")
     }
 }
-
 
 Core Features & Built-in Functions
 The Rudy interpreter supports a rich set of runtime tools for developers:
