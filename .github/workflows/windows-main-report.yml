@@ -1,0 +1,50 @@
+name: Rudy Windows Main Report
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  windows-build-and-report:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+
+    - name: Install Dependencies & PyInstaller
+      run: |
+        python -m pip install --upgrade pip
+        pip install pyinstaller .
+      shell: pwsh
+
+    - name: Run Windows Interpreter & Example Tests
+      run: |
+        Write-Host "--- [Rudy Windows Engine] Testando interpretador AST no Windows ---"
+        python src/rudy.py --help
+        
+        foreach ($script in Get-ChildItem examples/*.rudy) {
+            Write-Host "Executando script: $($script.Name)"
+            python src/rudy.py $script.FullName
+        }
+      shell: pwsh
+
+    - name: Test Standalone Compilation on Windows (--build)
+      run: |
+        Write-Host "--- [Rudy Windows Regen] Gerando executável standalone (.exe) ---"
+        python src/rudy.py examples/ola.rudy --build
+      shell: pwsh
+
+    - name: Generate and Archive Execution Report
+      uses: actions/upload-artifact@v4
+      with:
+        name: rudy-windows-report
+        path: dist/
