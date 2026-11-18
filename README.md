@@ -1,81 +1,133 @@
 <div align="center">
   <img src="assets/logo-rudy.png" alt="Rudy Logo - Maned Wolf" width="220"/>
 
-  # Rudy
-  **Rudy — A versatile, cross-platform programming language inspired by the Maned Wolf.**
+  # 🐺 Rudy
+  **A versatile, bilingual, cross-platform programming language inspired by the Maned Wolf.**
 
   [![License](https://img.shields.io/badge/License-Apache_2.0-D9531E.svg)](https://opensource.org/licenses/Apache-2.0)
-  [![Status](https://img.shields.io/badge/Status-Active_Development-2E7D32.svg)]()
+  [![Python](https://img.shields.io/badge/Engine-Python_3_%7C_AST-3776AB.svg?logo=python&logoColor=white)](https://www.python.org/)
+  [![Platform](https://img.shields.io/badge/Platform-Linux_%7C_Windows_%7C_Termux-2E7D32.svg)]()
+  [![Neovim](https://img.shields.io/badge/Editor-Neovim_Support-57A143.svg?logo=neovim&logoColor=white)](editors/neovim)
   [![Made in Brazil](https://img.shields.io/badge/Made_in-Brazil_🇧🇷-009C3B.svg)]()
 </div>
 
 ---
 
-## About Rudy
+## 🌟 About Rudy
 
-**Rudy** is a multipurpose programming language designed to unite **panoramic readability**, **cross-platform portability** (PC and Termux/Android), and **complete flexibility**. Inspired by the **Maned Wolf** (*Chrysocyon brachyurus*), Rudy empowers developers to build anything: from text-based games and ASCII animations to utilities, calculators, and system scripts.
+**Rudy** is a lightweight, multipurpose programming language designed to unite **panoramic readability**, **cross-platform portability** (Desktop PC & Termux/Android), and **complete flexibility**. Inspired by the **Maned Wolf** (*Chrysocyon brachyurus*), Rudy empowers developers to build terminal games, ASCII animations, CLI utilities, and system scripts without boilerplate code.
 
-* **Bilingual Syntax Support:** Write natively using either English keywords (`action`, `write`, `while`, `if`, `else`, `ask`) or Portuguese keywords (`acao`, `escrever`, `enquanto`, `se`, `senao`, `ler`).
-* **Multipurpose Engine:** Capable of handling logic, math, random generation, file persistence (`save`/`load`), and terminal timing (`sleep`/`clear`).
-* **Lightweight & Portable:** Built with a clean Python interpreter core, running smoothly across desktop environments and mobile terminals.
-* **National Identity:** Crafted in Brazil for the global open-source community under the Apache 2.0 License.
+* **🌍 Native Bilingual Syntax (EN / PT):** Write code seamlessly using English keywords (`action`, `write`, `while`, `if`, `else`, `ask`) or Portuguese keywords (`acao`, `escrever`, `enquanto`, `se`, `senao`, `ler`).
+* **🧠 AST-Powered Interpreter:** Built on a clean Lexer, Abstract Syntax Tree (AST) Parser, and Runtime Engine with built-in execution benchmarking.
+* **📦 Built-in Package Manager (`rudy install`):** Download and import reusable `.rudy` libraries directly into your `stdlib/` folder via package name or URL.
+* **⚙️ Standalone Executable Compiler (`--build`):** Package any `.rudy` script into a standalone `.exe` binary using PyInstaller integration.
+* **🎨 Official Neovim Integration:** Includes syntax highlighting, filetype detection, and Tree-sitter queries in `editors/neovim/`.
 
 ---
 
-## Code Example (Interactive Script)
+## 💻 Bilingual Code Example
 
-Here is how flexible and intuitive a program looks in **Rudy** (`.rudy` extension):
+You can write the exact same logic in **English** or **Portuguese** (`.rudy` extension):
+
+<table>
+<tr>
+<th>🇺🇸 English Syntax</th>
+<th>🇧🇷 Sintaxe em Português</th>
+</tr>
+<tr>
+<td>
 
 ```rudy
-// Interactive adventure example in Rudy
+// Interactive adventure in Rudy
 action main() {
     write("=== WELCOME TO RUDY ===")
-    name = ask("What is your character name? ")
-    
+    name = ask("Character name: ")
     hp = 50
-    write("Hello, " + name + "! Your initial HP is " + hp)
-
-    // Using random and conditions
+    
     damage = random(10, 25)
     hp = hp - damage
-    write("A wild obstacle appeared and caused " + damage + " damage!")
+    write(name + " took " + damage + " damage!")
 
     if (hp > 25) then {
-        write("Status: You are still strong!")
+        write("Status: Still strong!")
     } else {
-        write("Status: Warning! HP is low!")
+        write("Status: Warning! Low HP!")
     }
 }
 
-```
-Core Features & Built-in Functions
-The Rudy interpreter supports a rich set of runtime tools for developers:
- * Input & Output: write(...) / escrever(...) and ask(...) / ler(...)
- * Control Flow: if (...) then { ... } else { ... } and while (...) { ... }
- * Randomization & Math: random(min, max) / aleatorio(min, max) and basic arithmetic (+, -, *, /)
- * Time & Animation Control: sleep(seconds) / pausar(seconds) and clear() / limpar() for ASCII frame rendering
- * File Persistence: save(path, content) / salvar(path, content) and load(path) / carregar(path)
-Project Structure
- * assets/ — Official logos, icons, and brand assets
- * src/ — Interpreter and core engine (rudy.py)
- * examples/ — Sample .rudy scripts, programs, and mini-games
- * LICENSE — Apache 2.0 License
- * README.md — Main project documentation
-How to Run
-Make sure you have Python 3 installed, then run any .rudy script from your terminal:
-python src/rudy.py examples/example.rudy
+</td>
+<td>
+// Aventura interativa na Rudy
+acao main() {
+    escrever("=== BEM-VINDO À RUDY ===")
+    nome = ler("Nome do personagem: ")
+    hp = 50
+    
+    dano = aleatorio(10, 25)
+    hp = hp - dano
+    escrever(nome + " sofreu " + dano + " de dano!")
 
-## How to Contribute
+    se (hp > 25) entao {
+        escrever("Status: Ainda está forte!")
+    } senao {
+        escrever("Status: Alerta! HP baixo!")
+    }
+}
 
-Contributions, ideas, and suggestions are always welcome! Feel free to open an *Issue* or submit a *Pull Request*.
+</td>
+</tr>
+</table>
+🛠️ Core Features & Standard Library
+| Category | English Syntax | Portuguese Syntax | Description |
+|---|---|---|---|
+| Structure | action main() { ... } | acao main() { ... } | Defines an executable block/function |
+| Imports | use <module> | usar <modulo> | Imports packages from stdlib/ |
+| I/O | write(...) / ask(...) | escrever(...) / ler(...) | Prints output and reads user input |
+| Control Flow | if (...) then { ... } else { ... } | se (...) entao { ... } senao { ... } | Conditional branching |
+| Loops | while (...) { ... } | enquanto (...) { ... } | Conditional loop execution |
+| Math & RNG | random(min, max) / + - * / | aleatorio(min, max) / + - * / | Random integers and arithmetic |
+| Terminal | sleep(sec) / clear() | pausar(sec) / limpar() | Frame timing and screen clearing |
+| File System | save(path, data) / load(path) | salvar(path, data) / carregar(path) | Read and write local files |
+📁 Project Structure
+Rudy/
+├── assets/          # Official logos, icons, and brand assets
+├── editors/
+│   └── neovim/      # Official Neovim plugin (Lua, Vimscript, Tree-sitter queries)
+├── examples/        # Sample .rudy scripts, games (Snake, Masmorra), and demos
+├── src/
+│   └── rudy.py      # Lexer, AST Parser, Runtime Engine, Package Manager & Compiler
+├── stdlib/          # Standard Library & installed packages
+├── LICENSE          # Apache 2.0 License
+└── README.md        # Main project documentation
 
----
+🚀 Getting Started
+1. Clone the Repository
+git clone [https://github.com/luispolis124/Rudy.git](https://github.com/luispolis124/Rudy.git)
+cd Rudy
 
-## License
+2. Run a Rudy Script
+Make sure Python 3 is installed, then execute any .rudy file:
+python src/rudy.py examples/masmorra.rudy
 
-This project is licensed under the **Apache License 2.0**. See the [LICENSE](LICENSE) file for more details.
+3. Install Packages (stdlib/)
+python src/rudy.py install <package_name_or_url>
 
----
+4. Compile to Standalone Executable (.exe)
+python src/rudy.py examples/masmorra.rudy --build
+
+5. Enable Neovim Syntax Highlighting
+Check the setup guide inside editors/neovim/README.md to activate .rudy syntax colors in Neovim (Linux, macOS, or Termux).
+🤝 How to Contribute
+Contributions, new stdlib modules, game examples, and editor plugins are always welcome!
+ * Fork the project
+ * Create your feature branch (git checkout -b feature/AmazingFeature)
+ * Commit your changes (git commit -m 'Add some AmazingFeature')
+ * Push to the branch (git push origin feature/AmazingFeature)
+ * Open a Pull Request or Issue (and don't forget to give the repo a ⭐!)
+📜 License
+This project is licensed under the Apache License 2.0. See the LICENSE file for more details.
 <div align="center">
-  Made with dedication in Brazil 🇧🇷 by <b>Luis Felipe</b>
+Made with dedication in Brazil 🇧🇷 by <b>Luis Felipe</b>
 </div>
+
+---
