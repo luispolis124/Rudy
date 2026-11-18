@@ -43,44 +43,184 @@ def lexer(codigo_fonte):
     return tokens
 
 
-# --- 2. ANALISADOR SINTÁTICO (PARSER) ---
+# --- 2. NÓS DA ÁRVORE DE SINTAXE ABSTRATA (AST) ---
+class NoAST:
+    pass
+
+class ProgramaNode(NoAST):
+    def __init__(self, declaracoes):
+        self.declaracoes = declaracoes
+
+class FuncaoNode(NoAST):
+    def __init__(self, nome, corpo):
+        self.nome = nome
+        self.corpo = corpo
+
+class AtribuicaoNode(NoAST):
+    def __init__(self, nome, expr):
+        self.nome = nome
+        self.expr = expr
+
+class EscreverNode(NoAST):
+    def __init__(self, conteudo):
+        self.conteudo = conteudo
+
+class SalvarNode(NoAST):
+    def __init__(self, path, conteudo):
+        self.path = path
+        self.conteudo = conteudo
+
+class LimparNode(NoAST):
+    pass
+
+class SeNode(NoAST):
+    def __init__(self, condicao, bloco_entao, bloco_senao=None):
+        self.condicao = condicao
+        self.bloco_entao = bloco_entao
+        self.bloco_senao = bloco_senao
+
+class EnquantoNode(NoAST):
+    def __init__(self, condicao, bloco):
+        self.condicao = condicao
+        self.bloco = bloco
+
+
+# --- 3. ANALISADOR SINTÁTICO (PARSER COM AST) ---
 class Parser:
-    def __init__(self, tokens):
-        self.tokens = tokens
+    def __init__(self, linhas):
+        self.linhas = [l.strip() for l in linhas if l.strip() and not l.strip().startswith("//")]
         self.pos = 0
 
-    def token_atual(self):
-        if self.pos < len(self.tokens):
-            return self.tokens[self.pos]
-        return ('EOF', 'EOF', -1)
-
-    def consumir(self, tipo_esperado=None):
-        tok = self.token_atual()
-        if tipo_esperado and tok[0] != tipo_esperado and tok[1] != tipo_esperado:
-            raise SyntaxError(f"Erro de sintaxe na linha {tok[2]}: Esperado '{tipo_esperado}', encontrado '{tok[1]}'")
-        self.pos += 1
-        return tok
+    def linha_atual(self):
+        if self.pos < len(self.linhas):
+            return self.linhas[self.pos]
+        return None
 
     def parse(self):
-        arvore = []
-        while self.token_atual()[0] != 'EOF':
-            tok = self.token_atual()
-            if tok[1] in ('action', 'acao'):
-                arvore.append(self.parse_funcao())
+        declaracoes = []
+        while self.pos < len(self.linhas):
+            linha = self.linha_atual()
+            
+            # Declaração de Função / Ação
+            if (linha.startswith("action ") or linha.startswith("acao ")) and linha.endswith("{"):
+                declaracoes.append(self.parse_funcao())
             else:
+                declaracoes.append(self.parse_comando(linha))
                 self.pos += 1
-        return arvore
+                
+        return ProgramaNode(declaracoes)
 
     def parse_funcao(self):
-        self.consumir() # action ou acao
-        nome = self.consumir('IDENTIFICADOR')[1]
-        self.consumir('(')
-        self.consumir(')')
-        self.consumir('{')
-        return ("FUNCAO", nome)
+        linha = self.linhas[self.pos]
+        match = re.search(r'(?:action|acao)\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(\s*\)\s*\{', linha)
+        if not match:
+            raise SyntaxError(f"Erro de sintaxe na definição de função: {linha}")
+        nome = match.group(1)
+        self.pos += 1 # Pula a linha da função
+        
+        corpo = []
+        nivel = 1
+        while self.pos < len(self.linhas):
+            l = self.linhas[self.pos]
+            if l.endswith("{"):
+                nivel += 1
+            if l == "}":
+                nivel -= 1
+                if nivel == 0:
+                    self.pos += 1
+                    break
+            corpo.append(self.parse_comando(l))
+            self.pos += 1
+            
+        return FuncaoNode(nome, corpo)
+
+    def parse_comando(self, linha):
+        # Limpar tela
+        if linha == "clear()" or linha == "limpar()":
+            return LimparNode()
+
+        # Escrever
+        if (linha.startswith("write(") or linha.startswith("escrever(")) and linha.endswith(")"):
+            idx = linha.index("(")
+            conteudo = linha[idx+1:-1].strip()
+            return EscreverNode(conteudo)
+
+        # Salvar arquivo
+        if (linha.startswith("save(") or linha.startswith("salvar(")) and linha.endswith(")"):
+            idx = linha.index("(")
+            args = linha[idx+1:-1].split(",", 1)
+            if len(args) == 2:
+                return SalvarNode(args[0].strip(), args[1].strip())
+
+        # Estrutura Enquanto / While
+        if (linha.startswith("while") or linha.startswith("enquanto")) and linha.endswith("{"):
+            match = re.search(r'(?:while|enquanto)\s*\((.*?)\)\s*\{', linha)
+            if not match:
+                raise SyntaxError(f"Erro na sintaxe de repetição: {linha}")
+            cond = match.group(1)
+            self.pos += 1
+            bloco = []
+            nivel = 1
+            while self.pos < len(self.linhas):
+                l = self.linhas[self.pos]
+                if l.endswith("{"): nivel += 1
+                if l == "}":
+                    nivel -= 1
+                    if nivel == 0: break
+                bloco.append(self.parse_comando(l))
+                self.pos += 1
+            return EnquantoNode(cond, bloco)
+
+        # Estrutura Se / If
+        if (linha.startswith("if") or linha.startswith("se")) and ("then" in linha or "entao" in linha) and linha.endswith("{"):
+            match = re.search(r'(?:if|se)\s*\((.*?)\)\s*(?:then|entao)', linha)
+            if not match:
+                raise SyntaxError(f"Erro na sintaxe condicional: {linha}")
+            cond = match.group(1)
+            self.pos += 1
+            bloco_entao = []
+            nivel = 1
+            while self.pos < len(self.linhas):
+                l = self.linhas[self.pos]
+                if l.endswith("{"): nivel += 1
+                if l == "}":
+                    nivel -= 1
+                    if nivel == 0: break
+                bloco_entao.append(self.parse_comando(l))
+                self.pos += 1
+            
+            # Verifica se tem 'else' ou 'senao' logo em seguida
+            bloco_senao = None
+            if self.pos + 1 < len(self.linhas):
+                prox = self.linhas[self.pos + 1].strip()
+                if prox.startswith("else") or prox.startswith("senao"):
+                    self.pos += 2 # Pula o '}' e a linha do else
+                    bloco_senao = []
+                    nivel_else = 1
+                    while self.pos < len(self.linhas):
+                        l = self.linhas[self.pos]
+                        if l.endswith("{"): nivel_else += 1
+                        if l == "}":
+                            nivel_else -= 1
+                            if nivel_else == 0: break
+                        bloco_senao.append(self.parse_comando(l))
+                        self.pos += 1
+
+            return SeNode(cond, bloco_entao, bloco_senao)
+
+        # Atribuição de Variáveis
+        limpa_linha = linha
+        if limpa_linha.startswith("var "):
+            limpa_linha = limpa_linha[4:].strip()
+
+        if "=" in limpa_linha:
+            nome, expr = limpa_linha.split("=", 1)
+            return AtribuicaoNode(nome.strip(), expr.strip())
+
+        return EscreverNode(f"// Comando desconhecido: {linha}")
 
 
-# --- 3. AMBIENTE DE EXECUÇÃO (RUNTIME) ---
+# --- 4. AMBIENTE DE EXECUÇÃO (RUNTIME BASEADO EM AST) ---
 class RudyRuntime:
     def __init__(self):
         self.variaveis = {}
@@ -167,113 +307,46 @@ class RudyRuntime:
                 if op == '<=': return int(v1) <= int(v2)
         return False
 
-    def encontrar_fim_bloco(self, linhas, inicio):
-        nivel = 0
-        for i in range(inicio, len(linhas)):
-            l = linhas[i].strip()
-            if l.endswith("{"):
-                nivel += 1
-            if l == "}":
-                nivel -= 1
-                if nivel == 0:
-                    return i
-        return len(linhas) - 1
-
-    def executar_bloco(self, linhas, inicio, fim):
-        i = inicio
-        while i <= fim:
-            linha = linhas[i].strip()
-
-            if not linha or linha.startswith("//") or linha == "}":
-                i += 1
-                continue
-
-            if linha == "clear()" or linha == "limpar()":
-                os.system('cls' if os.name == 'nt' else 'clear')
-                i += 1
-                continue
-
-            if (linha.startswith("action ") or linha.startswith("acao ")) and linha.endswith("{"):
-                i += 1
-                continue
-
-            if (linha.startswith("while") or linha.startswith("enquanto")) and linha.endswith("{"):
-                match = re.search(r'(?:while|enquanto)\s*\((.*?)\)\s*\{', linha)
-                fim_bloco = self.encontrar_fim_bloco(linhas, i)
-                if match:
-                    cond = match.group(1)
-                    while self.avaliar_condicao(cond):
-                        self.executar_bloco(linhas, i + 1, fim_bloco - 1)
-                i = fim_bloco + 1
-                continue
-
-            if (linha.startswith("if") or linha.startswith("se")) and ("then" in linha or "entao" in linha) and linha.endswith("{"):
-                match = re.search(r'(?:if|se)\s*\((.*?)\)\s*(?:then|entao)', linha)
-                fim_if = self.encontrar_fim_bloco(linhas, i)
-                
-                condicao_atendida = False
-                if match and self.avaliar_condicao(match.group(1)):
-                    condicao_atendida = True
-                    self.executar_bloco(linhas, i + 1, fim_if - 1)
-                
-                proxima_linha_idx = fim_if + 1
-                if proxima_linha_idx < len(linhas):
-                    prox_linha = linhas[proxima_linha_idx].strip()
-                    if prox_linha.startswith("else") or prox_linha.startswith("senao"):
-                        fim_else = self.encontrar_fim_bloco(linhas, proxima_linha_idx)
-                        if not condicao_atendida:
-                            self.executar_bloco(linhas, proxima_linha_idx + 1, fim_else - 1)
-                        i = fim_else + 1
-                        continue
-
-                i = fim_if + 1
-                continue
-
-            if (linha.startswith("save(") or linha.startswith("salvar(")) and linha.endswith(")"):
-                idx = linha.index("(")
-                args_str = linha[idx+1:-1]
-                partes = args_str.split(",", 1)
-                if len(partes) == 2:
-                    path = self.avaliar_valor(partes[0].strip())
-                    conteudo = self.avaliar_valor(partes[1].strip())
-                    with open(str(path), 'w', encoding='utf-8') as f:
-                        f.write(str(conteudo))
-                i += 1
-                continue
-
-            if (linha.startswith("write(") or linha.startswith("escrever(")) and linha.endswith(")"):
-                idx = linha.index("(")
-                conteudo = linha[idx+1:-1]
-                print(self.avaliar_valor(conteudo))
-                i += 1
-                continue
-
-            limpa_linha = linha
-            if limpa_linha.startswith("var "):
-                limpa_linha = limpa_linha[4:].strip()
-
-            if "=" in limpa_linha and not limpa_linha.startswith("if") and not limpa_linha.startswith("while") and not limpa_linha.startswith("se") and not limpa_linha.startswith("enquanto") and not limpa_linha.startswith("else") and not limpa_linha.startswith("senao"):
-                nome, expr = limpa_linha.split("=", 1)
-                self.variaveis[nome.strip()] = self.avaliar_valor(expr.strip())
-                i += 1
-                continue
-
-            print(f"Erro de sintaxe na linha {i+1}: {linha}")
-            i += 1
+    def executar(self, no):
+        if isinstance(no, ProgramaNode):
+            for decl in no.declaracoes:
+                self.executar(decl)
+        elif isinstance(no, FuncaoNode):
+            for cmd in no.corpo:
+                self.executar(cmd)
+        elif isinstance(no, AtribuicaoNode):
+            self.variaveis[no.nome] = self.avaliar_valor(no.expr)
+        elif isinstance(no, EscreverNode):
+            print(self.avaliar_valor(no.conteudo))
+        elif isinstance(no, SalvarNode):
+            path = self.avaliar_valor(no.path)
+            conteudo = self.avaliar_valor(no.conteudo)
+            with open(str(path), 'w', encoding='utf-8') as f:
+                f.write(str(conteudo))
+        elif isinstance(no, LimparNode):
+            os.system('cls' if os.name == 'nt' else 'clear')
+        elif isinstance(no, EnquantoNode):
+            while self.avaliar_condicao(no.condicao):
+                for cmd in no.bloco:
+                    self.executar(cmd)
+        elif isinstance(no, SeNode):
+            if self.avaliar_condicao(no.condicao):
+                for cmd in no.bloco_entao:
+                    self.executar(cmd)
+            elif no.bloco_senao:
+                for cmd in no.bloco_senao:
+                    self.executar(cmd)
 
 
-# --- 4. COMPILADOR / EMPACOTADOR STANDALONE (.EXE) ---
+# --- 5. COMPILADOR / EMPACOTADOR STANDALONE (.EXE) ---
 def compilar_para_executavel(arquivo_path):
     print(f"--- [Rudy Compiler] Empacotando '{arquivo_path}' para Executável (.exe) ---")
-    
-    # Valida se o PyInstaller está disponível no ambiente (PC ou Termux)
     try:
         import PyInstaller
     except ImportError:
         print("Aviso: O PyInstaller não está instalado. Instalando automaticamente via pip...")
         subprocess.check_call([sys.executable, "-m", "pip", "install", "pyinstaller"])
 
-    # Cria um script temporário em Python que embute o interpretador e o código Rudy
     with open(arquivo_path, 'r', encoding='utf-8') as f:
         codigo_rudy = f.read()
 
@@ -284,186 +357,191 @@ import re
 import random
 import time
 
-# Código Rudy embarcado embutido no executável standalone
 CODIGO_EMBARCADO = """{codigo_rudy}"""
 
-# [Runtime embutido para o binário]
-TOKEN_TIPOS = [
-    ('COMENTARIO', r'//.*'),
-    ('PALAVRA_CHAVE', r'\\b(action|acao|if|se|else|senao|while|enquanto|then|entao|var)\\b'),
-    ('FUNCAO', r'\\b(write|escrever|ask|ler|random|aleatorio|sleep|pausar|save|salvar|load|carregar|clear|limpar)\\b'),
-    ('IDENTIFICADOR', r'[a-zA-Z_][a-zA-Z0-9_]*'),
-    ('NUMERO', r'\\b\\d+\\b'),
-    ('STRING', r'"[^"]*"|\'[^\']*\''),
-    ('OPERADOR_COMP', r'==|!=|>=|<=|>|<'),
-    ('ATRIBUICAO', r'='),
-    ('OPERADOR_MAT', r'[\\+\\-\\*/]'),
-    ('SIMBOLOS', r'[\\(\\\)\\{\\\},]'),
-    ('ESPACO', r'[ \\t\\r\\n]+'),
-]
+class ProgramaNode:
+    def __init__(self, declaracoes): self.declaracoes = declaracoes
+class FuncaoNode:
+    def __init__(self, nome, corpo): self.nome = nome; self.corpo = corpo
+class AtribuicaoNode:
+    def __init__(self, nome, expr): self.nome = nome; self.expr = expr
+class EscreverNode:
+    def __init__(self, conteudo): self.conteudo = conteudo
+class SalvarNode:
+    def __init__(self, path, conteudo): self.path = path; self.conteudo = conteudo
+class LimparNode: pass
+class SeNode:
+    def __init__(self, condicao, bloco_entao, bloco_senao=None): self.condicao = condicao; self.bloco_entao = bloco_entao; self.bloco_senao = bloco_senao
+class EnquantoNode:
+    def __init__(self, condicao, bloco): self.condicao = condicao; self.bloco = bloco
+
+class Parser:
+    def __init__(self, linhas):
+        self.linhas = [l.strip() for l in linhas if l.strip() and not l.strip().startswith("//")]
+        self.pos = 0
+    def linha_atual(self): return self.linhas[self.pos] if self.pos < len(self.linhas) else None
+    def parse(self):
+        declaracoes = []
+        while self.pos < len(self.linhas):
+            linha = self.linha_atual()
+            if (linha.startswith("action ") or linha.startswith("acao ")) and linha.endswith("{{"):
+                declaracoes.append(self.parse_funcao())
+            else:
+                declaracoes.append(self.parse_comando(linha))
+                self.pos += 1
+        return ProgramaNode(declaracoes)
+    def parse_funcao(self):
+        linha = self.linhas[self.pos]
+        match = re.search(r'(?:action|acao)\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\(\\s*\\)\\s*\\{{', linha)
+        nome = match.group(1)
+        self.pos += 1
+        corpo = []
+        nivel = 1
+        while self.pos < len(self.linhas):
+            l = self.linhas[self.pos]
+            if l.endswith("{{"): nivel += 1
+            if l == "}}":
+                nivel -= 1
+                if nivel == 0:
+                    self.pos += 1
+                    break
+            corpo.append(self.parse_comando(l))
+            self.pos += 1
+        return FuncaoNode(nome, corpo)
+    def parse_comando(self, linha):
+        if linha == "clear()" or linha == "limpar()": return LimparNode()
+        if (linha.startswith("write(") or linha.startswith("escrever(")) and linha.endswith(")"):
+            return EscreverNode(linha[linha.index("(")+1:-1].strip())
+        if (linha.startswith("save(") or linha.startswith("salvar(")) and linha.endswith(")"):
+            args = linha[linha.index("(")+1:-1].split(",", 1)
+            return SalvarNode(args[0].strip(), args[1].strip())
+        if (linha.startswith("while") or linha.startswith("enquanto")) and linha.endswith("{{"):
+            match = re.search(r'(?:while|enquanto)\\s*\\((.*?)\\)\\s*\\{{', linha)
+            cond = match.group(1)
+            self.pos += 1
+            bloco = []
+            nivel = 1
+            while self.pos < len(self.linhas):
+                l = self.linhas[self.pos]
+                if l.endswith("{{"): nivel += 1
+                if l == "}}":
+                    nivel -= 1
+                    if nivel == 0: break
+                bloco.append(self.parse_comando(l))
+                self.pos += 1
+            return EnquantoNode(cond, bloco)
+        if (linha.startswith("if") or linha.startswith("se")) and ("then" in linha or "entao" in linha) and linha.endswith("{{"):
+            match = re.search(r'(?:if|se)\\s*\\((.*?)\\)\\s*(?:then|entao)', linha)
+            cond = match.group(1)
+            self.pos += 1
+            bloco_entao = []
+            nivel = 1
+            while self.pos < len(self.linhas):
+                l = self.linhas[self.pos]
+                if l.endswith("{{"): nivel += 1
+                if l == "}}":
+                    nivel -= 1
+                    if nivel == 0: break
+                bloco_entao.append(self.parse_comando(l))
+                self.pos += 1
+            bloco_senao = None
+            if self.pos + 1 < len(self.linhas):
+                prox = self.linhas[self.pos + 1].strip()
+                if prox.startswith("else") or prox.startswith("senao"):
+                    self.pos += 2
+                    bloco_senao = []
+                    nivel_else = 1
+                    while self.pos < len(self.linhas):
+                        l = self.linhas[self.pos]
+                        if l.endswith("{{"): nivel_else += 1
+                        if l == "}}":
+                            nivel_else -= 1
+                            if nivel_else == 0: break
+                        bloco_senao.append(self.parse_comando(l))
+                        self.pos += 1
+            return SeNode(cond, bloco_entao, bloco_senao)
+        limpa_linha = linha[4:].strip() if linha.startswith("var ") else linha
+        if "=" in limpa_linha:
+            nome, expr = limpa_linha.split("=", 1)
+            return AtribuicaoNode(nome.strip(), expr.strip())
+        return EscreverNode("")
 
 class RudyRuntime:
-    def __init__(self):
-        self.variaveis = {{}}
-
+    def __init__(self): self.variaveis = {{}}
     def avaliar_valor(self, expr):
         expr = expr.strip()
         if (expr.startswith("load(") or expr.startswith("carregar(")) and expr.endswith(")"):
-            idx = expr.index("(")
-            path = self.avaliar_valor(expr[idx+1:-1])
+            path = self.avaliar_valor(expr[expr.index("(")+1:-1])
             if os.path.exists(str(path)):
-                with open(str(path), 'r', encoding='utf-8') as f:
-                    return f.read()
+                with open(str(path), 'r', encoding='utf-8') as f: return f.read()
             return ""
         if (expr.startswith("sleep(") or expr.startswith("pausar(")) and expr.endswith(")"):
-            idx = expr.index("(")
-            tempo = float(self.avaliar_valor(expr[idx+1:-1]))
-            time.sleep(tempo)
+            time.sleep(float(self.avaliar_valor(expr[expr.index("(")+1:-1])))
             return 0
         if (expr.startswith("ask(") or expr.startswith("ler(")) and expr.endswith(")"):
-            idx = expr.index("(")
-            prompt_expr = expr[idx+1:-1]
-            prompt = self.avaliar_valor(prompt_expr)
-            return input(str(prompt))
+            return input(str(self.avaliar_valor(expr[expr.index("(")+1:-1])))
         if (expr.startswith("random(") or expr.startswith("aleatorio(")) and expr.endswith(")"):
-            idx = expr.index("(")
-            args = expr[idx+1:-1].split(",")
-            min_v = int(self.avaliar_valor(args[0]))
-            max_v = int(self.avaliar_valor(args[1]))
-            return random.randint(min_v, max_v)
+            args = expr[expr.index("(")+1:-1].split(",")
+            return random.randint(int(self.avaliar_valor(args[0])), int(self.avaliar_valor(args[1])))
         if '"' in expr or "'" in expr:
-            partes = expr.split('+')
             resultado = ""
-            for p in partes:
+            for p in expr.split('+'):
                 p = p.strip()
                 if (p.startswith('"') and p.endswith('"')) or (p.startswith("'") and p.endswith("'")):
                     resultado += p[1:-1]
                 elif p in self.variaveis:
                     resultado += str(self.variaveis[p])
-                else:
-                    resultado += p
+                else: resultado += p
             return resultado
         for op in ['+', '-', '*', '/']:
             if op in expr:
                 esq, dir_ = expr.split(op, 1)
-                v1 = int(self.avaliar_valor(esq))
-                v2 = int(self.avaliar_valor(dir_))
-                if op == '+': return v1 + v2
-                if op == '-': return v1 - v2
-                if op == '*': return v1 * v2
-                if op == '/': return v1 // v2
-        if expr in self.variaveis:
-            return self.variaveis[expr]
-        if expr.isdigit() or (expr.startswith('-') and expr[1:].isdigit()):
-            return int(expr)
+                v1, v2 = int(self.avaliar_valor(esq)), int(self.avaliar_valor(dir_))
+                return v1 + v2 if op == '+' else (v1 - v2 if op == '-' else (v1 * v2 if op == '*' else v1 // v2))
+        if expr in self.variaveis: return self.variaveis[expr]
+        if expr.isdigit() or (expr.startswith('-') and expr[1:].isdigit()): return int(expr)
         return expr
 
     def avaliar_condicao(self, cond):
         if " and " in cond or " e " in cond:
-            separador = " and " if " and " in cond else " e "
-            partes = cond.split(separador)
-            return all(self.avaliar_condicao(p) for p in partes)
+            return all(self.avaliar_condicao(p) for p in cond.split(" and " if " and " in cond else " e "))
         if " or " in cond or " ou " in cond:
-            separador = " or " if " or " in cond else " ou "
-            partes = cond.split(separador)
-            return any(self.avaliar_condicao(p) for p in partes)
+            return any(self.avaliar_condicao(p) for p in cond.split(" or " if " or " in cond else " ou "))
         for op in ['==', '!=', '>=', '<=', '>', '<']:
             if op in cond:
                 esq, dir_ = cond.split(op, 1)
-                v1 = self.avaliar_valor(esq.strip())
-                v2 = self.avaliar_valor(dir_.strip())
-                if op == '==': return str(v1) == str(v2)
-                if op == '!=': return str(v1) != str(v2)
-                if op == '>':  return int(v1) > int(v2)
-                if op == '<':  return int(v1) < int(v2)
-                if op == '>=': return int(v1) >= int(v2)
-                if op == '<=': return int(v1) <= int(v2)
+                v1, v2 = self.avaliar_valor(esq.strip()), self.avaliar_valor(dir_.strip())
+                return (str(v1) == str(v2)) if op == '==' else ((str(v1) != str(v2)) if op == '!=' else (int(v1) > int(v2) if op == '>' else (int(v1) < int(v2) if op == '<' else (int(v1) >= int(v2) if op == '>=' else int(v1) <= int(v2))))
         return False
 
-    def encontrar_fim_bloco(self, linhas, inicio):
-        nivel = 0
-        for i in range(inicio, len(linhas)):
-            l = linhas[i].strip()
-            if l.endswith("{{"):
-                nivel += 1
-            if l == "}}":
-                nivel -= 1
-                if nivel == 0:
-                    return i
-        return len(linhas) - 1
-
-    def executar_bloco(self, linhas, inicio, fim):
-        i = inicio
-        while i <= fim:
-            linha = linhas[i].strip()
-            if not linha or linha.startswith("//") or linha == "}}":
-                i += 1
-                continue
-            if linha == "clear()" or linha == "limpar()":
-                os.system('cls' if os.name == 'nt' else 'clear')
-                i += 1
-                continue
-            if (linha.startswith("action ") or linha.startswith("acao ")) and linha.endswith("{{"):
-                i += 1
-                continue
-            if (linha.startswith("while") or linha.startswith("enquanto")) and linha.endswith("{{"):
-                match = re.search(r'(?:while|enquanto)\\s*\\((.*?)\\)\\s*\\{{', linha)
-                fim_bloco = self.encontrar_fim_bloco(linhas, i)
-                if match:
-                    cond = match.group(1)
-                    while self.avaliar_condicao(cond):
-                        self.executar_bloco(linhas, i + 1, fim_bloco - 1)
-                i = fim_bloco + 1
-                continue
-            if (linha.startswith("if") or linha.startswith("se")) and ("then" in linha or "entao" in linha) and linha.endswith("{{"):
-                match = re.search(r'(?:if|se)\\s*\\((.*?)\\)\\s*(?:then|entao)', linha)
-                fim_if = self.encontrar_fim_bloco(linhas, i)
-                condicao_atendida = False
-                if match and self.avaliar_condicao(match.group(1)):
-                    condicao_atendida = True
-                    self.executar_bloco(linhas, i + 1, fim_if - 1)
-                proxima_linha_idx = fim_if + 1
-                if proxima_linha_idx < len(linhas):
-                    prox_linha = linhas[proxima_linha_idx].strip()
-                    if prox_linha.startswith("else") or prox_linha.startswith("senao"):
-                        fim_else = self.encontrar_fim_bloco(linhas, proxima_linha_idx)
-                        if not condicao_atendida:
-                            self.executar_bloco(linhas, proxima_linha_idx + 1, fim_else - 1)
-                        i = fim_else + 1
-                        continue
-                i = fim_if + 1
-                continue
-            if (linha.startswith("save(") or linha.startswith("salvar(")) and linha.endswith(")"):
-                idx = linha.index("(")
-                args_str = linha[idx+1:-1]
-                partes = args_str.split(",", 1)
-                if len(partes) == 2:
-                    path = self.avaliar_valor(partes[0].strip())
-                    conteudo = self.avaliar_valor(partes[1].strip())
-                    with open(str(path), 'w', encoding='utf-8') as f:
-                        f.write(str(conteudo))
-                i += 1
-                continue
-            if (linha.startswith("write(") or linha.startswith("escrever(")) and linha.endswith(")"):
-                idx = linha.index("(")
-                conteudo = linha[idx+1:-1]
-                print(self.avaliar_valor(conteudo))
-                i += 1
-                continue
-            limpa_linha = linha
-            if limpa_linha.startswith("var "):
-                limpa_linha = limpa_linha[4:].strip()
-            if "=" in limpa_linha and not limpa_linha.startswith("if") and not limpa_linha.startswith("while") and not limpa_linha.startswith("se") and not limpa_linha.startswith("enquanto") and not limpa_linha.startswith("else") and not limpa_linha.startswith("senao"):
-                nome, expr = limpa_linha.split("=", 1)
-                self.variaveis[nome.strip()] = self.avaliar_valor(expr.strip())
-                i += 1
-                continue
-            i += 1
+    def executar(self, no):
+        if isinstance(no, ProgramaNode):
+            for decl in no.declaracoes: self.executar(decl)
+        elif isinstance(no, FuncaoNode):
+            for cmd in no.corpo: self.executar(cmd)
+        elif isinstance(no, AtribuicaoNode):
+            self.variaveis[no.nome] = self.avaliar_valor(no.expr)
+        elif isinstance(no, EscreverNode):
+            print(self.avaliar_valor(no.conteudo))
+        elif isinstance(no, SalvarNode):
+            with open(str(self.avaliar_valor(no.path)), 'w', encoding='utf-8') as f:
+                f.write(str(self.avaliar_valor(no.conteudo)))
+        elif isinstance(no, LimparNode):
+            os.system('cls' if os.name == 'nt' else 'clear')
+        elif isinstance(no, EnquantoNode):
+            while self.avaliar_condicao(no.condicao):
+                for cmd in no.bloco: self.executar(cmd)
+        elif isinstance(no, SeNode):
+            if self.avaliar_condicao(no.condicao):
+                for cmd in no.bloco_entao: self.executar(cmd)
+            elif no.bloco_senao:
+                for cmd in no.bloco_senao: self.executar(cmd)
 
 if __name__ == "__main__":
+    parser = Parser(CODIGO_EMBARCADO.split('\\n'))
+    ast = parser.parse()
     runtime = RudyRuntime()
-    linhas = CODIGO_EMBARCADO.split('\\n')
-    runtime.executar_bloco(linhas, 0, len(linhas) - 1)
+    runtime.executar(ast)
 '''
 
     stub_filename = "rudy_temp_stub.py"
@@ -471,19 +549,16 @@ if __name__ == "__main__":
         f.write(stub_code)
 
     base_nome = os.path.splitext(os.path.basename(arquivo_path))[0]
-    
-    # Executa o PyInstaller para gerar o executável standalone (--onefile)
     print(f"Gerando executável standalone para '{base_nome}'...")
     subprocess.check_call([sys.executable, "-m", "PyInstaller", "--onefile", "--noconsole", stub_filename])
     
-    # Limpeza dos arquivos temporários de compilação
     if os.path.exists(stub_filename):
         os.remove(stub_filename)
         
     print(f"\n[Sucesso!] Executável gerado na pasta 'dist/' para o programa '{base_nome}'.")
 
 
-# --- 5. FUNÇÃO PRINCIPAL ---
+# --- 6. FUNÇÃO PRINCIPAL ---
 def main():
     if len(sys.argv) < 2:
         print("Uso: python src/rudy.py <arquivo.rudy> [--build / --compilar]")
@@ -494,7 +569,6 @@ def main():
         print(f"Erro: Arquivo '{arquivo_path}' não encontrado.")
         return
         
-    # Verifica se o usuário pediu para compilar para executável
     if len(sys.argv) >= 3 and sys.argv[2] in ('--build', '--compilar', 'build'):
         compilar_para_executavel(arquivo_path)
         return
@@ -502,15 +576,18 @@ def main():
     with open(arquivo_path, 'r', encoding='utf-8') as f:
         codigo_fonte = f.read()
         
-    print(f"--- Compilando e Executando {arquivo_path} com a Rudy ---")
+    print(f"--- Compilando e Executando {arquivo_path} com a Rudy (AST Engine) ---")
     
+    # 1. Lexer (Geração de Tokens)
     tokens = lexer(codigo_fonte)
-    parser = Parser(tokens)
-    parser.parse()
     
+    # 2. Parser (Geração da Árvore de Sintaxe Abstrata - AST)
+    parser = Parser(codigo_fonte.split('\n'))
+    ast = parser.parse()
+    
+    # 3. Runtime (Execução baseada na AST)
     runtime = RudyRuntime()
-    linhas = codigo_fonte.split('\n')
-    runtime.executar_bloco(linhas, 0, len(linhas) - 1)
+    runtime.executar(ast)
 
 if __name__ == "__main__":
     main()
