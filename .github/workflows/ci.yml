@@ -1,0 +1,45 @@
+name: Rudy CI
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Upgrade Pip & Install Build Tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install .
+
+    - name: Run Syntax & Engine Checks
+      run: |
+        # Testa se o interpretador executa sem erros de sintaxe e exibe a ajuda/versão
+        python src/rudy.py --help || python src/rudy.py
+
+    - name: Test Example Scripts
+      run: |
+        # Executa os exemplos disponíveis para validar o interpretador AST
+        for script in examples/*.rudy; do
+          if [ -f "$script" ]; then
+            echo "Testando: $script"
+            python src/rudy.py "$script"
+          fi
+        done
+      shell: bash
