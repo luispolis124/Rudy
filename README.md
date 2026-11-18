@@ -65,10 +65,17 @@ How to Run
 Make sure you have Python 3 installed, then run any .rudy script from your terminal:
 python src/rudy.py examples/example.rudy
 
-How to Contribute
-Contributions, ideas, and suggestions are always welcome! Feel free to open an Issue or submit a Pull Request.
-License
-This project is licensed under the Apache License 2.0. See the LICENSE file for more details.
+## How to Contribute
+
+Contributions, ideas, and suggestions are always welcome! Feel free to open an *Issue* or submit a *Pull Request*.
+
+---
+
+## License
+
+This project is licensed under the **Apache License 2.0**. See the [LICENSE](LICENSE) file for more details.
+
+---
 <div align="center">
-Made with dedication in Brazil 🇧🇷 by <b>Luis Felipe</b>
+  Made with dedication in Brazil 🇧🇷 by <b>Luis Felipe</b>
 </div>
