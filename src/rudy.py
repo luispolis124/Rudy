@@ -24,7 +24,8 @@ def lexer(codigo_fonte):
     tokens = []
     linha_num = 1
     
-    padrao_regex = '|'.join(f'(?P<{nome>}>{padrao})' for nome, padrao in TOKEN_TIPOS)
+    # Correção da f-string para o padrão (?P<nome>padrao)
+    padrao_regex = '|'.join(f'(?P<{nome>>{padrao})' for nome, padrao in TOKEN_TIPOS)
     
     for match in re.finditer(padrao_regex, codigo_fonte):
         tipo = match.lastgroup
@@ -101,7 +102,6 @@ class Parser:
         while self.pos < len(self.linhas):
             linha = self.linha_atual()
             
-            # Declaração de Função / Ação
             if (linha.startswith("action ") or linha.startswith("acao ")) and linha.endswith("{"):
                 declaracoes.append(self.parse_funcao())
             else:
@@ -116,7 +116,7 @@ class Parser:
         if not match:
             raise SyntaxError(f"Erro de sintaxe na definição de função: {linha}")
         nome = match.group(1)
-        self.pos += 1 # Pula a linha da função
+        self.pos += 1
         
         corpo = []
         nivel = 1
@@ -135,24 +135,20 @@ class Parser:
         return FuncaoNode(nome, corpo)
 
     def parse_comando(self, linha):
-        # Limpar tela
         if linha == "clear()" or linha == "limpar()":
             return LimparNode()
 
-        # Escrever
         if (linha.startswith("write(") or linha.startswith("escrever(")) and linha.endswith(")"):
             idx = linha.index("(")
             conteudo = linha[idx+1:-1].strip()
             return EscreverNode(conteudo)
 
-        # Salvar arquivo
         if (linha.startswith("save(") or linha.startswith("salvar(")) and linha.endswith(")"):
             idx = linha.index("(")
             args = linha[idx+1:-1].split(",", 1)
             if len(args) == 2:
                 return SalvarNode(args[0].strip(), args[1].strip())
 
-        # Estrutura Enquanto / While
         if (linha.startswith("while") or linha.startswith("enquanto")) and linha.endswith("{"):
             match = re.search(r'(?:while|enquanto)\s*\((.*?)\)\s*\{', linha)
             if not match:
@@ -171,7 +167,6 @@ class Parser:
                 self.pos += 1
             return EnquantoNode(cond, bloco)
 
-        # Estrutura Se / If
         if (linha.startswith("if") or linha.startswith("se")) and ("then" in linha or "entao" in linha) and linha.endswith("{"):
             match = re.search(r'(?:if|se)\s*\((.*?)\)\s*(?:then|entao)', linha)
             if not match:
@@ -189,12 +184,11 @@ class Parser:
                 bloco_entao.append(self.parse_comando(l))
                 self.pos += 1
             
-            # Verifica se tem 'else' ou 'senao' logo em seguida
             bloco_senao = None
             if self.pos + 1 < len(self.linhas):
                 prox = self.linhas[self.pos + 1].strip()
                 if prox.startswith("else") or prox.startswith("senao"):
-                    self.pos += 2 # Pula o '}' e a linha do else
+                    self.pos += 2
                     bloco_senao = []
                     nivel_else = 1
                     while self.pos < len(self.linhas):
@@ -208,7 +202,6 @@ class Parser:
 
             return SeNode(cond, bloco_entao, bloco_senao)
 
-        # Atribuição de Variáveis
         limpa_linha = linha
         if limpa_linha.startswith("var "):
             limpa_linha = limpa_linha[4:].strip()
@@ -581,7 +574,7 @@ def main():
         
     print(f"--- Compilando e Executando {arquivo_path} com a Rudy (AST Engine) ---")
     
-    # Inicia o cronômetro em milissegundos
+    # Inicia o cronômetro de performance
     tempo_inicio = time.perf_counter()
     
     # 1. Lexer (Geração de Tokens)
@@ -595,7 +588,7 @@ def main():
     runtime = RudyRuntime()
     runtime.executar(ast)
     
-    # Finaliza o cronômetro
+    # Encerra o cronômetro e exibe em ms
     tempo_fim = time.perf_counter()
     tempo_total_ms = (tempo_fim - tempo_inicio) * 1000
     
