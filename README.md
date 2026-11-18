@@ -71,4 +71,3 @@ This project is licensed under the Apache License 2.0. See the LICENSE file for 
 <div align="center">
 Made with dedication in Brazil 🇧🇷 by <b>Luis Felipe</b>
 </div>
-
