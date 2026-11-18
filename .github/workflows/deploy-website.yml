@@ -1,0 +1,43 @@
+name: Deploy Rudy Website to GitHub Pages
+
+on:
+  # Dispara automaticamente toda vez que houver um push na branch main/master
+  push:
+    branches: ["main", "master"]
+
+  # Permite disparar manualmente pela aba Actions do GitHub
+  workflow_dispatch:
+
+# Configura as permissões necessárias para o GitHub Actions publicar no Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Permite apenas um deploy simultâneo por vez
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload Website Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # Aponta exatamente para a pasta onde está o seu index.html
+          path: './website'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
