@@ -4,11 +4,12 @@ import re
 import random
 import time
 import subprocess
+import urllib.request
 
 # --- 1. LER / ANALISADOR LÉXICO (LEXER) ---
 TOKEN_TIPOS = [
     ('COMENTARIO', r'//.*'),
-    ('PALAVRA_CHAVE', r'\b(action|acao|if|se|else|senao|while|enquanto|then|entao|var)\b'),
+    ('PALAVRA_CHAVE', r'\b(action|acao|if|se|else|senao|while|enquanto|then|entao|var|use|usar)\b'),
     ('FUNCAO', r'\b(write|escrever|ask|ler|random|aleatorio|sleep|pausar|save|salvar|load|carregar|clear|limpar)\b'),
     ('IDENTIFICADOR', r'[a-zA-Z_][a-zA-Z0-9_]*'),
     ('NUMERO', r'\b\d+\b'),
@@ -24,7 +25,6 @@ def lexer(codigo_fonte):
     tokens = []
     linha_num = 1
     
-    # F-string corrigida com (?P<nome>padrao)
     padrao_regex = '|'.join(f'(?P<{nome}>{padrao})' for nome, padrao in TOKEN_TIPOS)
     
     for match in re.finditer(padrao_regex, codigo_fonte):
@@ -102,6 +102,23 @@ class Parser:
         while self.pos < len(self.linhas):
             linha = self.linha_atual()
             
+            # Tratamento de importação de pacotes (use / usar)
+            if linha.startswith("use ") or linha.startswith("usar "):
+                match = re.search(r'(?:use|usar)\s+([a-zA-Z_][a-zA-Z0-9_]*)', linha)
+                if match:
+                    pkg_nome = match.group(1)
+                    pkg_path = os.path.join("stdlib", f"{pkg_nome}.rudy")
+                    if os.path.exists(pkg_path):
+                        with open(pkg_path, 'r', encoding='utf-8') as f:
+                            sub_codigo = f.read()
+                        sub_parser = Parser(sub_codigo.split('\n'))
+                        sub_ast = sub_parser.parse()
+                        declaracoes.extend(sub_ast.declaracoes)
+                    else:
+                        print(f"Aviso: Biblioteca '{pkg_nome}' não encontrada na pasta stdlib/. Execute 'python src/rudy.py install {pkg_nome}'.")
+                self.pos += 1
+                continue
+
             if (linha.startswith("action ") or linha.startswith("acao ")) and linha.endswith("{"):
                 declaracoes.append(self.parse_funcao())
             else:
@@ -331,7 +348,39 @@ class RudyRuntime:
                     self.executar(cmd)
 
 
-# --- 5. COMPILADOR / EMPACOTADOR STANDALONE (.EXE) ---
+# --- 5. GERENCIADOR DE PACOTES (RUDY INSTALL) ---
+def rudy_install(pacote_nome):
+    print(f"--- [Rudy Package Manager] Instalando biblioteca '{pacote_nome}' ---")
+    os.makedirs("stdlib", exist_ok=True)
+    
+    # Exemplo simulado de repositório central ou URL direta no GitHub
+    # Se o usuário passar uma URL ou nome de pacote padrão:
+    if pacote_nome.startswith("http://") or pacote_nome.startswith("https://"):
+        url = pacote_nome
+        nome_arquivo = url.split("/")[-1]
+        if not nome_arquivo.endswith(".rudy"):
+            nome_arquivo += ".rudy"
+    else:
+        # Repositório oficial de exemplo da comunidade Rudy
+        url = f"https://raw.githubusercontent.com/luispolis124/Rudy/main/stdlib/{pacote_nome}.rudy"
+        nome_arquivo = f"{pacote_nome}.rudy"
+        
+    destino = os.path.join("stdlib", nome_arquivo)
+    
+    try:
+        print(f"Baixando de: {url}")
+        urllib.request.urlretrieve(url, destino)
+        print(f"[Sucesso!] Pacote '{pacote_nome}' instalado com sucesso em 'stdlib/{nome_arquivo}'.")
+    except Exception as e:
+        print(f"Erro ao baixar o pacote '{pacote_nome}': {e}")
+        # Criando um arquivo local de exemplo caso falhe a rede
+        with open(destino, 'w', encoding='utf-8') as f:
+            f.write(f"// Biblioteca padrão instalada localmente: {pacote_nome}\n")
+            f.write(f"write(\"Biblioteca {pacote_nome} carregada com sucesso!\")\n")
+        print(f"[Fallback] Criado pacote padrão local em '{destino}'.")
+
+
+# --- 6. COMPILADOR / EMPACOTADOR STANDALONE (.EXE) ---
 def compilar_para_executavel(arquivo_path):
     print(f"--- [Rudy Compiler] Empacotando '{arquivo_path}' para Executável (.exe) ---")
     try:
@@ -377,6 +426,9 @@ class Parser:
         declaracoes = []
         while self.pos < len(self.linhas):
             linha = self.linha_atual()
+            if linha.startswith("use ") or linha.startswith("usar "):
+                self.pos += 1
+                continue
             if (linha.startswith("action ") or linha.startswith("acao ")) and linha.endswith("{{"):
                 declaracoes.append(self.parse_funcao())
             else:
@@ -554,13 +606,27 @@ if __name__ == "__main__":
     print(f"\n[Sucesso!] Executável gerado na pasta 'dist/' para o programa '{base_nome}'.")
 
 
-# --- 6. FUNÇÃO PRINCIPAL ---
+# --- 7. FUNÇÃO PRINCIPAL ---
 def main():
     if len(sys.argv) < 2:
-        print("Uso: python src/rudy.py <arquivo.rudy> [--build / --compilar]")
+        print("Uso:")
+        print("  Executar script:  python src/rudy.py <arquivo.rudy>")
+        print("  Compilar exe:     python src/rudy.py <arquivo.rudy> --build")
+        print("  Instalar pacote:  python src/rudy.py install <nome_pacote>")
         return
         
-    arquivo_path = sys.argv[1]
+    comando_ou_arquivo = sys.argv[1]
+    
+    # Tratamento do comando 'install'
+    if comando_ou_arquivo in ('install', 'instalar'):
+        if len(sys.argv) < 3:
+            print("Erro: Especifique o nome do pacote ou biblioteca a ser instalado.")
+            print("Exemplo: python src/rudy.py install math_utils")
+            return
+        rudy_install(sys.argv[2])
+        return
+
+    arquivo_path = comando_ou_arquivo
     if not os.path.exists(arquivo_path):
         print(f"Erro: Arquivo '{arquivo_path}' não encontrado.")
         return
