@@ -1,0 +1,56 @@
+name: Rudy Cloud & Ecosystem Mapping
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+    generate-ecosystem-map:
+      runs-on: ubuntu-22.04
+
+      steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Map Rudy Modules and Standard Library
+        run: |
+          echo "--- [Rudy Ecosystem Mapper] Mapeando pacotes e dependências ---"
+          python -c "
+          import os, json
+          
+          ecosystem = {
+              'language': 'Rudy',
+              'version': open('VERSION').read().strip() if os.path.exists('VERSION') else '1.0.0',
+              'stdlib_modules': [],
+              'editors_supported': [],
+              'examples_count': 0
+          }
+          
+          # Mapeia Standard Library
+          if os.path.exists('stdlib'):
+              ecosystem['stdlib_modules'] = [f for f in os.listdir('stdlib') if f.endswith('.rudy')]
+              
+          # Mapeia Editores
+          if os.path.exists('editors'):
+              ecosystem['editors_supported'] = os.listdir('editors')
+              
+          # Mapeia Exemplos
+          if os.path.exists('examples'):
+              ecosystem['examples_count'] = len([f for f in os.listdir('examples') if f.endswith('.rudy')])
+              
+          print(json.dumps(ecosystem, indent=2))
+          with open('ecosystem-map.json', 'w', encoding='utf-8') as f:
+              json.dump(ecosystem, f, indent=2)
+          "
+
+      - name: Upload Ecosystem Topology Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rudy-ecosystem-map
+          path: ecosystem-map.json
