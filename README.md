@@ -47,6 +47,7 @@ action main() {
     }
 }
 
+```
 Core Features & Built-in Functions
 The Rudy interpreter supports a rich set of runtime tools for developers:
  * Input & Output: write(...) / escrever(...) and ask(...) / ler(...)
