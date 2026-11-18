@@ -1,0 +1,12 @@
+# Ruff Configuration for Rudy Programming Language
+target-version = "py310"
+line-length = 100
+
+[lint]
+# Seleciona regras de erro (E), avisos (W), pyflakes (F) e boas práticas
+select = ["E", "W", "F", "I", "N"]
+ignore = []
+
+[format]
+quote-style = "double"
+indent-style = "space"
