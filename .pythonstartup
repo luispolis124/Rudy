@@ -1,0 +1,15 @@
+# Configuração de inicialização para o ambiente Python da Rudy
+import sys
+import os
+
+print("\n--- [Rudy Python Debugger Environment Loaded] ---")
+print(f"Versao do Python: {sys.version.split()[0]}")
+print("Ferramentas disponiveis: sys, os, traceback\n")
+
+# Exemplo de função útil de depuração para inspecionar variáveis ou nós da AST
+def inspect_node(node):
+    """Inspeciona propriedades de um nó AST da Rudy de forma limpa."""
+    print(f"--- [Noh AST] Tipo: {type(node).__name__} ---")
+    for attr in dir(node):
+        if not attr.startswith('_'):
+            print(f"  {attr} = {getattr(node, attr)}")
