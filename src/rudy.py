@@ -7,6 +7,15 @@ import time
 def avaliar_valor(expr, variaveis):
     expr = expr.strip()
 
+    # Função de leitura de arquivo: load("arquivo.txt") ou carregar("arquivo.txt")
+    if (expr.startswith("load(") or expr.startswith("carregar(")) and expr.endswith(")"):
+        idx = expr.index("(")
+        path = avaliar_valor(expr[idx+1:-1], variaveis)
+        if os.path.exists(path):
+            with open(path, 'r', encoding='utf-8') as f:
+                return f.read()
+        return ""
+
     # Função de pausa/sleep: sleep(segundos) ou pausar(segundos)
     if (expr.startswith("sleep(") or expr.startswith("pausar(")) and expr.endswith(")"):
         idx = expr.index("(")
@@ -127,13 +136,42 @@ def executar_bloco(linhas, inicio, fim, variaveis):
             i = fim_bloco + 1
             continue
 
-        # Estrutura condicional: if (...) then { ou se (...) entao {
+        # Estrutura condicional: if (...) then { [else { ... }] } ou se (...) entao { [senao { ... }] }
         if (linha.startswith("if") or linha.startswith("se")) and ("then" in linha or "entao" in linha) and linha.endswith("{"):
             match = re.search(r'(?:if|se)\s*\((.*?)\)\s*(?:then|entao)', linha)
-            fim_bloco = encontrar_fim_bloco(linhas, i)
+            fim_if = encontrar_fim_bloco(linhas, i)
+            
+            condicao_atendida = False
             if match and avaliar_condicao(match.group(1), variaveis):
-                executar_bloco(linhas, i + 1, fim_bloco - 1, variaveis)
-            i = fim_bloco + 1
+                condicao_atendida = True
+                executar_bloco(linhas, i + 1, fim_if - 1, variaveis)
+            
+            # Verifica se logo após o fechamento do if tem um else / senao
+            proxima_linha_idx = fim_if + 1
+            if proxima_linha_idx < len(linhas):
+                prox_linha = linhas[proxima_linha_idx].strip()
+                if prox_linha.startswith("else") or prox_linha.startswith("senao"):
+                    fim_else = encontrar_fim_bloco(linhas, proxima_linha_idx)
+                    if not condicao_atendida:
+                        executar_bloco(linhas, proxima_linha_idx + 1, fim_else - 1, variaveis)
+                    i = fim_else + 1
+                    continue
+
+            i = fim_if + 1
+            continue
+
+        # Comandos de gravação em arquivo: save("arq.txt", texto) ou salvar("arq.txt", texto)
+        if (linha.startswith("save(") or linha.startswith("salvar(")) and linha.endswith(")"):
+            idx = linha.index("(")
+            args_str = linha[idx+1:-1]
+            # Divide os argumentos separando por vírgula (cuidado simples)
+            partes = args_str.split(",", 1)
+            if len(partes) == 2:
+                path = avaliar_valor(partes[0].strip(), variaveis)
+                conteudo = avaliar_valor(partes[1].strip(), variaveis)
+                with open(path, 'w', encoding='utf-8') as f:
+                    f.write(str(conteudo))
+            i += 1
             continue
 
         # Comandos de escrita: write(...) ou escrever(...)
@@ -145,7 +183,7 @@ def executar_bloco(linhas, inicio, fim, variaveis):
             continue
 
         # Atribuição de variáveis
-        if "=" in linha and not linha.startswith("if") and not linha.startswith("while") and not linha.startswith("se") and not linha.startswith("enquanto"):
+        if "=" in linha and not linha.startswith("if") and not linha.startswith("while") and not linha.startswith("se") and not linha.startswith("enquanto") and not linha.startswith("else") and not linha.startswith("senao"):
             nome, expr = linha.split("=", 1)
             variaveis[nome.strip()] = avaliar_valor(expr.strip(), variaveis)
             i += 1
