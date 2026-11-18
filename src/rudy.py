@@ -24,8 +24,8 @@ def lexer(codigo_fonte):
     tokens = []
     linha_num = 1
     
-    # Correção da f-string para o padrão (?P<nome>padrao)
-    padrao_regex = '|'.join(f'(?P<{nome>>{padrao})' for nome, padrao in TOKEN_TIPOS)
+    # F-string corrigida com (?P<nome>padrao)
+    padrao_regex = '|'.join(f'(?P<{nome}>{padrao})' for nome, padrao in TOKEN_TIPOS)
     
     for match in re.finditer(padrao_regex, codigo_fonte):
         tipo = match.lastgroup
@@ -574,21 +574,15 @@ def main():
         
     print(f"--- Compilando e Executando {arquivo_path} com a Rudy (AST Engine) ---")
     
-    # Inicia o cronômetro de performance
     tempo_inicio = time.perf_counter()
     
-    # 1. Lexer (Geração de Tokens)
     tokens = lexer(codigo_fonte)
-    
-    # 2. Parser (Geração da Árvore de Sintaxe Abstrata - AST)
     parser = Parser(codigo_fonte.split('\n'))
     ast = parser.parse()
     
-    # 3. Runtime (Execução baseada na AST)
     runtime = RudyRuntime()
     runtime.executar(ast)
     
-    # Encerra o cronômetro e exibe em ms
     tempo_fim = time.perf_counter()
     tempo_total_ms = (tempo_fim - tempo_inicio) * 1000
     
