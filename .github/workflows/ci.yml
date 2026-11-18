@@ -43,4 +43,12 @@ jobs:
           fi
         done
       shell: bash
-    
+
+  spell-check:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Check Spelling with Typos
+      uses: crate-ci/typos@master
