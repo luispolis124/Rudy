@@ -41,3 +41,25 @@ py-modules = ["rudy"]
 pythonVersion = "3.8"
 include = ["src"]
 exclude = ["dist", "build", "stdlib", "__pycache__"]
+
+[tool.black]
+line-length = 100
+target-version = ['py38', 'py39', 'py310', 'py311', 'py312']
+include = '\.py$'
+exclude = '''
+(
+  /(
+      \.eggs         # exclude a few common directories in the
+    | \.git          # root of the project
+    | \.hg
+    | \.mypy_cache
+    | \.tox
+    | \.venv
+    | _build
+    | buck-out
+    | build
+    | dist
+    | stdlib
+  )/
+)
+'''
