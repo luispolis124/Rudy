@@ -11,6 +11,7 @@ extend-exclude = [
 
 [default.extend-words]
 # Termos em português e nomes de variáveis/classes da Rudy
+leve = "leve"
 programa = "programa"
 programanode = "programa"
 comando = "comando"
