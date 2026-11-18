@@ -90,7 +90,3 @@ Now that you've mastered the basics, explore the other documentation guides to l
 ```
 
 ---
-
-Basta salvar este conteúdo dentro de **`docs/TUTORIAL.md`**, e toda a documentação da Rudy (`README.md`, `FUNCTIONS.md`, `ERRORS.md`, `CLASSES.md`, `SYNTAX.md`, `CONTROL_FLOW.md`, `STRINGS.md` e `TUTORIAL.md`) estará 100% completa e profissional! 🐺📁✨
-
-```
