@@ -353,15 +353,12 @@ def rudy_install(pacote_nome):
     print(f"--- [Rudy Package Manager] Instalando biblioteca '{pacote_nome}' ---")
     os.makedirs("stdlib", exist_ok=True)
     
-    # Exemplo simulado de repositório central ou URL direta no GitHub
-    # Se o usuário passar uma URL ou nome de pacote padrão:
     if pacote_nome.startswith("http://") or pacote_nome.startswith("https://"):
         url = pacote_nome
         nome_arquivo = url.split("/")[-1]
         if not nome_arquivo.endswith(".rudy"):
             nome_arquivo += ".rudy"
     else:
-        # Repositório oficial de exemplo da comunidade Rudy
         url = f"https://raw.githubusercontent.com/luispolis124/Rudy/main/stdlib/{pacote_nome}.rudy"
         nome_arquivo = f"{pacote_nome}.rudy"
         
@@ -373,7 +370,6 @@ def rudy_install(pacote_nome):
         print(f"[Sucesso!] Pacote '{pacote_nome}' instalado com sucesso em 'stdlib/{nome_arquivo}'.")
     except Exception as e:
         print(f"Erro ao baixar o pacote '{pacote_nome}': {e}")
-        # Criando um arquivo local de exemplo caso falhe a rede
         with open(destino, 'w', encoding='utf-8') as f:
             f.write(f"// Biblioteca padrão instalada localmente: {pacote_nome}\n")
             f.write(f"write(\"Biblioteca {pacote_nome} carregada com sucesso!\")\n")
@@ -612,16 +608,14 @@ def main():
         print("Uso:")
         print("  Executar script:  python src/rudy.py <arquivo.rudy>")
         print("  Compilar exe:     python src/rudy.py <arquivo.rudy> --build")
-        print("  Instalar pacote:  python src/rudy.py install <nome_pacote>")
+        print("  Instalar pacote:  python src/rudy.py install <nome_pacote_ou_url>")
         return
         
     comando_ou_arquivo = sys.argv[1]
     
-    # Tratamento do comando 'install'
     if comando_ou_arquivo in ('install', 'instalar'):
         if len(sys.argv) < 3:
-            print("Erro: Especifique o nome do pacote ou biblioteca a ser instalado.")
-            print("Exemplo: python src/rudy.py install math_utils")
+            print("Erro: Especifique o nome do pacote ou URL da biblioteca.")
             return
         rudy_install(sys.argv[2])
         return
