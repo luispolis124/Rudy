@@ -22,7 +22,7 @@
 
 ---
 
-## Code Example (RPG / Interactive Script)
+## Code Example (Interactive Script)
 
 Here is how flexible and intuitive a program looks in **Rudy** (`.rudy` extension):
 
@@ -72,4 +72,3 @@ This project is licensed under the Apache License 2.0. See the LICENSE file for 
 Made with dedication in Brazil 🇧🇷 by <b>Luis Felipe</b>
 </div>
 
----
