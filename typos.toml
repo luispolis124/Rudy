@@ -1,4 +1,4 @@
-# . typos.toml — Source code spell checker configuration for Rudy
+# .typos.toml — Source code spell checker configuration for Rudy
 
 [files]
 extend-exclude = [
@@ -10,7 +10,15 @@ extend-exclude = [
 ]
 
 [default.extend-words]
-# Palavras-chave em português e termos específicos da Rudy que o corretor deve aceitar
+# Termos em português e nomes de variáveis/classes da Rudy
+programa = "programa"
+programanode = "programa"
+comando = "comando"
+atual = "atual"
+erro = "erro"
+condicional = "condicional"
+oficial = "oficial"
+profissional = "profissional"
 acao = "acao"
 senao = "senao"
 enquanto = "enquanto"
