@@ -81,7 +81,3 @@ while (i < 5) {
 ```
 
 *(Or using Portuguese keywords: `enquanto (...) { ... }`)*
-
-```
-
----
