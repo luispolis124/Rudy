@@ -281,15 +281,30 @@ class RudyRuntime:
         for op in ['+', '-', '*', '/']:
             if op in expr:
                 esq, dir_ = expr.split(op, 1)
-                v1 = int(self.avaliar_valor(esq))
-                v2 = int(self.avaliar_valor(dir_))
+                val_esq = self.avaliar_valor(esq)
+                val_dir = self.avaliar_valor(dir_)
+                
+                # Conversão segura para int para evitar falhas com strings vazias
+                try:
+                    v1 = int(val_esq) if str(val_esq).strip() != '' else 0
+                except ValueError:
+                    v1 = 0
+                try:
+                    v2 = int(val_dir) if str(val_dir).strip() != '' else 0
+                except ValueError:
+                    v2 = 0
+
                 if op == '+': return v1 + v2
                 if op == '-': return v1 - v2
                 if op == '*': return v1 * v2
-                if op == '/': return v1 // v2
+                if op == '/': return v1 // v2 if v2 != 0 else 0
 
         if expr in self.variaveis:
-            return self.variaveis[expr]
+            val = self.variaveis[expr]
+            if str(val).isdigit() or (str(val).startswith('-') and str(val)[1:].isdigit()):
+                return int(val)
+            return val
+            
         if expr.isdigit() or (expr.startswith('-') and expr[1:].isdigit()):
             return int(expr)
         return expr
@@ -311,10 +326,15 @@ class RudyRuntime:
                 v2 = self.avaliar_valor(dir_.strip())
                 if op == '==': return str(v1) == str(v2)
                 if op == '!=': return str(v1) != str(v2)
-                if op == '>':  return int(v1) > int(v2)
-                if op == '<':  return int(v1) < int(v2)
-                if op == '>=': return int(v1) >= int(v2)
-                if op == '<=': return int(v1) <= int(v2)
+                try:
+                    iv1 = int(v1) if str(v1).strip() != '' else 0
+                    iv2 = int(v2) if str(v2).strip() != '' else 0
+                except ValueError:
+                    iv1, iv2 = 0, 0
+                if op == '>':  return iv1 > iv2
+                if op == '<':  return iv1 < iv2
+                if op == '>=': return iv1 >= iv2
+                if op == '<=': return iv1 <= iv2
         return False
 
     def executar(self, no):
@@ -537,9 +557,16 @@ class RudyRuntime:
         for op in ['+', '-', '*', '/']:
             if op in expr:
                 esq, dir_ = expr.split(op, 1)
-                v1, v2 = int(self.avaliar_valor(esq)), int(self.avaliar_valor(dir_))
-                return v1 + v2 if op == '+' else (v1 - v2 if op == '-' else (v1 * v2 if op == '*' else v1 // v2))
-        if expr in self.variaveis: return self.variaveis[expr]
+                val_esq, val_dir = self.avaliar_valor(esq), self.avaliar_valor(dir_)
+                try: v1 = int(val_esq) if str(val_esq).strip() != '' else 0
+                except ValueError: v1 = 0
+                try: v2 = int(val_dir) if str(val_dir).strip() != '' else 0
+                except ValueError: v2 = 0
+                return v1 + v2 if op == '+' else (v1 - v2 if op == '-' else (v1 * v2 if op == '*' else (v1 // v2 if v2 != 0 else 0)))
+        if expr in self.variaveis:
+            val = self.variaveis[expr]
+            if str(val).isdigit() or (str(val).startswith('-') and str(val)[1:].isdigit()): return int(val)
+            return val
         if expr.isdigit() or (expr.startswith('-') and expr[1:].isdigit()): return int(expr)
         return expr
 
@@ -552,7 +579,14 @@ class RudyRuntime:
             if op in cond:
                 esq, dir_ = cond.split(op, 1)
                 v1, v2 = self.avaliar_valor(esq.strip()), self.avaliar_valor(dir_.strip())
-                return (str(v1) == str(v2)) if op == '==' else ((str(v1) != str(v2)) if op == '!=' else (int(v1) > int(v2) if op == '>' else (int(v1) < int(v2) if op == '<' else (int(v1) >= int(v2) if op == '>=' else int(v1) <= int(v2))))
+                if op == '==': return str(v1) == str(v2)
+                if op == '!=': return str(v1) != str(v2)
+                try:
+                    iv1 = int(v1) if str(v1).strip() != '' else 0
+                    iv2 = int(v2) if str(v2).strip() != '' else 0
+                except ValueError:
+                    iv1, iv2 = 0, 0
+                return iv1 > iv2 if op == '>' else (iv1 < iv2 if op == '<' else (iv1 >= iv2 if op == '>=' else iv1 <= iv2))
         return False
 
     def executar(self, no):
