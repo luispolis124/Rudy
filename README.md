@@ -54,9 +54,12 @@ action main() {
         write("Status: Warning! Low HP!")
     }
 }
+```
 
 </td>
 <td>
+
+```rudy
 // Aventura interativa na Rudy
 acao main() {
     escrever("=== BEM-VINDO À RUDY ===")
@@ -73,22 +76,32 @@ acao main() {
         escrever("Status: Alerta! HP baixo!")
     }
 }
+```
 
 </td>
 </tr>
 </table>
-🛠️ Core Features & Standard Library
+
+---
+
+## 🛠️ Core Features & Standard Library
+
 | Category | English Syntax | Portuguese Syntax | Description |
-|---|---|---|---|
-| Structure | action main() { ... } | acao main() { ... } | Defines an executable block/function |
-| Imports | use <module> | usar <modulo> | Imports packages from stdlib/ |
-| I/O | write(...) / ask(...) | escrever(...) / ler(...) | Prints output and reads user input |
-| Control Flow | if (...) then { ... } else { ... } | se (...) entao { ... } senao { ... } | Conditional branching |
-| Loops | while (...) { ... } | enquanto (...) { ... } | Conditional loop execution |
-| Math & RNG | random(min, max) / + - * / | aleatorio(min, max) / + - * / | Random integers and arithmetic |
-| Terminal | sleep(sec) / clear() | pausar(sec) / limpar() | Frame timing and screen clearing |
-| File System | save(path, data) / load(path) | salvar(path, data) / carregar(path) | Read and write local files |
-📁 Project Structure
+| :--- | :--- | :--- | :--- |
+| **Structure** | `action main() { ... }` | `acao main() { ... }` | Defines an executable block/function |
+| **Imports** | `use <module>` | `usar <modulo>` | Imports packages from `stdlib/` |
+| **I/O** | `write(...)` / `ask(...)` | `escrever(...)` / `ler(...)` | Prints output and reads user input |
+| **Control Flow** | `if (...) then { ... } else { ... }` | `se (...) entao { ... } senao { ... }` | Conditional branching |
+| **Loops** | `while (...) { ... }` | `enquanto (...) { ... }` | Conditional loop execution |
+| **Math & RNG** | `random(min, max)` / `+ - * /` | `aleatorio(min, max)` / `+ - * /` | Random integers and arithmetic |
+| **Terminal** | `sleep(sec)` / `clear()` | `pausar(sec)` / `limpar()` | Frame timing and screen clearing |
+| **File System** | `save(path, data)` / `load(path)` | `salvar(path, data)` / `carregar(path)` | Read and write local files |
+
+---
+
+## 📁 Project Structure
+
+```text
 Rudy/
 ├── assets/          # Official logos, icons, and brand assets
 ├── editors/
@@ -99,35 +112,55 @@ Rudy/
 ├── stdlib/          # Standard Library & installed packages
 ├── LICENSE          # Apache 2.0 License
 └── README.md        # Main project documentation
+```
 
-🚀 Getting Started
-1. Clone the Repository
-git clone [https://github.com/luispolis124/Rudy.git](https://github.com/luispolis124/Rudy.git)
+## 🚀 Getting Started
+
+### 1. Clone the Repository
+```bash
+git clone https://github.com/luispolis124/Rudy.git
 cd Rudy
+```
 
-2. Run a Rudy Script
-Make sure Python 3 is installed, then execute any .rudy file:
+### 2. Run a Rudy Script
+Make sure **Python 3** is installed, then execute any `.rudy` file:
+```bash
 python src/rudy.py examples/masmorra.rudy
+```
 
-3. Install Packages (stdlib/)
+### 3. Install Packages (`stdlib/`)
+```bash
 python src/rudy.py install <package_name_or_url>
+```
 
-4. Compile to Standalone Executable (.exe)
+### 4. Compile to Standalone Executable (`.exe`)
+```bash
 python src/rudy.py examples/masmorra.rudy --build
+```
 
-5. Enable Neovim Syntax Highlighting
-Check the setup guide inside editors/neovim/README.md to activate .rudy syntax colors in Neovim (Linux, macOS, or Termux).
-🤝 How to Contribute
-Contributions, new stdlib modules, game examples, and editor plugins are always welcome!
- * Fork the project
- * Create your feature branch (git checkout -b feature/AmazingFeature)
- * Commit your changes (git commit -m 'Add some AmazingFeature')
- * Push to the branch (git push origin feature/AmazingFeature)
- * Open a Pull Request or Issue (and don't forget to give the repo a ⭐!)
-📜 License
-This project is licensed under the Apache License 2.0. See the LICENSE file for more details.
-<div align="center">
-Made with dedication in Brazil 🇧🇷 by <b>Luis Felipe</b>
-</div>
+### 5. Enable Neovim Syntax Highlighting
+Check the setup guide inside [`editors/neovim/README.md`](editors/neovim/README.md) to activate `.rudy` syntax colors in Neovim (Linux, macOS, or Termux).
 
 ---
+
+## 🤝 How to Contribute
+
+Contributions, new stdlib modules, game examples, and editor plugins are always welcome!
+
+1. Fork the project
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a **Pull Request** or **Issue** (and don't forget to give the repo a ⭐!)
+
+---
+
+## 📜 License
+
+This project is licensed under the **Apache License 2.0**. See the [LICENSE](LICENSE) file for more details.
+
+---
+
+<div align="center">
+  Made with dedication in Brazil 🇧🇷 by <b>Luis Felipe</b>
+</div>
