@@ -1,0 +1,9 @@
+// My first program in Rudy
+action main() {
+    name = "World"
+    write("Hello, " + name + "! Welcome to the Rudy programming language.")
+
+    if (10 > 5) then {
+        write("The maned wolf is ready to run!")
+    }
+}

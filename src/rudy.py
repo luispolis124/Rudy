@@ -6,6 +6,105 @@ import time
 import subprocess
 import urllib.request
 import marshal
+from typing import Any, Union
+
+RudyValor = Union[str, int, float]
+
+LOCALES_SUPORTADOS = ("en-us", "en-uk")
+
+
+def obter_localidade():
+    for arg in sys.argv[1:]:
+        if arg.startswith("--locale="):
+            locale = arg.split("=", 1)[1].strip().lower()
+            if locale in LOCALES_SUPORTADOS:
+                return locale
+        if arg in ("--en-us", "--usa", "en-us"):
+            return "en-us"
+        if arg in ("--en-uk", "--uk", "en-uk"):
+            return "en-uk"
+
+    locale = os.environ.get("RUDY_LOCALE", "en-us").strip().lower()
+    return locale if locale in LOCALES_SUPORTADOS else "en-us"
+
+
+LOCALIDADE = obter_localidade()
+
+MENSAGENS = {
+    "en-us": {
+        "unknown_character": "Unknown lexical character on line",
+        "package_missing": "Warning: Library '{pkg}' not found in the stdlib/ folder. Run 'python src/rudy.py install {pkg}'.",
+        "function_syntax": "Syntax error in function definition",
+        "loop_syntax": "Syntax error in loop",
+        "if_syntax": "Syntax error in conditional",
+        "unknown_command": "Unknown command",
+        "input_interrupted": "Input interrupted by the user.",
+        "package_install": "--- [Rudy Package Manager] Installing library '{pkg}' ---",
+        "download": "Downloading from",
+        "installed": "Package '{pkg}' installed successfully in 'stdlib/{file}'.",
+        "download_error": "Error downloading package '{pkg}'",
+        "fallback": "Created local fallback package in '{dest}'.",
+        "fallback_comment": "// Standard library installed locally",
+        "fallback_loaded": "Library {pkg} loaded successfully!",
+        "bytecode_compile": "--- [Rudy Bytecode Engine] Compiling '{file}' to optimized bytecode ---",
+        "bytecode_success": "Bytecode generated and compressed in '{file}'",
+        "execution_time": "Execution time",
+        "repl_title": "Rudy Interactive Shell (v1.0 - Bilingual PT/EN)",
+        "repl_help": "Enter Rudy commands or 'sair' / 'exit' to close.",
+        "repl_bye": "Goodbye!",
+        "repl_interrupt": "Use 'sair' or 'exit' to close the shell.",
+        "rudy_error": "[Rudy Error]",
+        "compiler": "--- [Rudy Compiler] Packaging '{file}' as a standalone executable (.exe) ---",
+        "pyinstaller_missing": "Warning: PyInstaller is not installed. Installing automatically with pip...",
+        "generating": "Generating standalone executable for",
+        "success_exe": "Executable generated in the 'dist/' folder",
+        "missing_arg": "Error: Specify a package name or library URL.",
+        "file_missing": "Error: File '{file}' was not found.",
+        "bytecode_running": "Running through the Rudy Bytecode Virtual Machine...",
+        "benchmark": "Rudy Benchmark",
+        "total_time": "Total time",
+        "ast_running": "Compiling and running {file} with Rudy (AST Engine)",
+    },
+    "en-uk": {
+        "unknown_character": "Unknown lexical character on line",
+        "package_missing": "Warning: Library '{pkg}' not found in the stdlib/ folder. Run 'python src/rudy.py install {pkg}'.",
+        "function_syntax": "Syntax error in function definition",
+        "loop_syntax": "Syntax error in loop",
+        "if_syntax": "Syntax error in conditional",
+        "unknown_command": "Unknown command",
+        "input_interrupted": "Input interrupted by the user.",
+        "package_install": "--- [Rudy Package Manager] Installing library '{pkg}' ---",
+        "download": "Downloading from",
+        "installed": "Package '{pkg}' installed successfully in 'stdlib/{file}'.",
+        "download_error": "Error downloading package '{pkg}'",
+        "fallback": "Created local fallback package in '{dest}'.",
+        "fallback_comment": "// Standard library installed locally",
+        "fallback_loaded": "Library {pkg} loaded successfully!",
+        "bytecode_compile": "--- [Rudy Bytecode Engine] Compiling '{file}' to optimised bytecode ---",
+        "bytecode_success": "Bytecode generated and compressed in '{file}'",
+        "execution_time": "Execution time",
+        "repl_title": "Rudy Interactive Shell (v1.0 - Bilingual PT/EN)",
+        "repl_help": "Enter Rudy commands or 'exit' / 'sair' to close.",
+        "repl_bye": "Goodbye!",
+        "repl_interrupt": "Use 'exit' or 'sair' to close the shell.",
+        "rudy_error": "[Rudy Error]",
+        "compiler": "--- [Rudy Compiler] Packaging '{file}' as a standalone executable (.exe) ---",
+        "pyinstaller_missing": "Warning: PyInstaller is not installed. Installing automatically with pip...",
+        "generating": "Generating standalone executable for",
+        "success_exe": "Executable generated in the 'dist/' folder",
+        "missing_arg": "Error: Specify a package name or library URL.",
+        "file_missing": "Error: File '{file}' was not found.",
+        "bytecode_running": "Running through the Rudy Bytecode Virtual Machine...",
+        "benchmark": "Rudy Benchmark",
+        "total_time": "Total time",
+        "ast_running": "Compiling and running {file} with Rudy (AST Engine)",
+    },
+}
+
+
+def mensagem(chave, **valores):
+    return MENSAGENS[LOCALIDADE][chave].format(**valores)
+
 
 # --- 1. LER / ANALISADOR LÉXICO (LEXER) ---
 TOKEN_TIPOS = [
@@ -30,6 +129,8 @@ def lexer(codigo_fonte):
     
     for match in re.finditer(padrao_regex, codigo_fonte):
         tipo = match.lastgroup
+        if tipo is None:
+            raise SyntaxError(f"{mensagem('unknown_character')} {linha_num}: {match.group(0)}")
         valor = match.group(tipo)
         
         if tipo == 'ESPACO':
@@ -37,10 +138,7 @@ def lexer(codigo_fonte):
             continue
         elif tipo == 'COMENTARIO':
             continue
-        elif tipo is not None:
-            tokens.append((tipo, valor, linha_num))
-        else:
-            raise SyntaxError(f"Erro léxico desconhecido na linha {linha_num}: {valor}")
+        tokens.append((tipo, valor, linha_num))
             
     return tokens
 
@@ -102,6 +200,8 @@ class Parser:
         declaracoes = []
         while self.pos < len(self.linhas):
             linha = self.linha_atual()
+            if linha is None:
+                break
             
             # Tratamento de importação de pacotes (use / usar)
             if linha.startswith("use ") or linha.startswith("usar "):
@@ -116,7 +216,7 @@ class Parser:
                         sub_ast = sub_parser.parse()
                         declaracoes.extend(sub_ast.declaracoes)
                     else:
-                        print(f"Aviso: Biblioteca '{pkg_nome}' não encontrada na pasta stdlib/. Execute 'python src/rudy.py install {pkg_nome}'.")
+                        print(mensagem("package_missing", pkg=pkg_nome))
                 self.pos += 1
                 continue
 
@@ -132,7 +232,7 @@ class Parser:
         linha = self.linhas[self.pos]
         match = re.search(r'(?:action|acao)\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(\s*\)\s*\{', linha)
         if not match:
-            raise SyntaxError(f"Erro de sintaxe na definição de função: {linha}")
+            raise SyntaxError(f"{mensagem('function_syntax')}: {linha}")
         nome = match.group(1)
         self.pos += 1
         
@@ -170,7 +270,7 @@ class Parser:
         if (linha.startswith("while") or linha.startswith("enquanto")) and linha.endswith("{"):
             match = re.search(r'(?:while|enquanto)\s*\((.*?)\)\s*\{', linha)
             if not match:
-                raise SyntaxError(f"Erro na sintaxe de repetição: {linha}")
+                raise SyntaxError(f"{mensagem('loop_syntax')}: {linha}")
             cond = match.group(1)
             self.pos += 1
             bloco = []
@@ -188,7 +288,7 @@ class Parser:
         if (linha.startswith("if") or linha.startswith("se")) and ("then" in linha or "entao" in linha) and linha.endswith("{"):
             match = re.search(r'(?:if|se)\s*\((.*?)\)\s*(?:then|entao)', linha)
             if not match:
-                raise SyntaxError(f"Erro na sintaxe condicional: {linha}")
+                raise SyntaxError(f"{mensagem('if_syntax')}: {linha}")
             cond = match.group(1)
             self.pos += 1
             bloco_entao = []
@@ -236,7 +336,7 @@ class RudyRuntime:
     def __init__(self):
         self.variaveis = {}
 
-    def avaliar_valor(self, expr):
+    def avaliar_valor(self, expr: str) -> RudyValor:
         expr = expr.strip()
 
         if (expr.startswith("load(") or expr.startswith("carregar(")) and expr.endswith(")"):
@@ -374,7 +474,7 @@ class RudyRuntime:
 
 # --- 5. GERENCIADOR DE PACOTES (RUDY INSTALL) ---
 def rudy_install(pacote_nome):
-    print(f"--- [Rudy Package Manager] Instalando biblioteca '{pacote_nome}' ---")
+    print(mensagem("package_install", pkg=pacote_nome))
     os.makedirs("stdlib", exist_ok=True)
     
     if pacote_nome.startswith("http://") or pacote_nome.startswith("https://"):
@@ -389,20 +489,20 @@ def rudy_install(pacote_nome):
     destino = os.path.join("stdlib", nome_arquivo)
     
     try:
-        print(f"Baixando de: {url}")
+        print(f"{mensagem('download')}: {url}")
         urllib.request.urlretrieve(url, destino)
-        print(f"[Sucesso!] Pacote '{pacote_nome}' instalado com sucesso em 'stdlib/{nome_arquivo}'.")
+        print(f"[Success!] {mensagem('installed', pkg=pacote_nome, file=nome_arquivo)}")
     except Exception as e:
-        print(f"Erro ao baixar o pacote '{pacote_nome}': {e}")
+        print(f"{mensagem('download_error', pkg=pacote_nome)}: {e}")
         with open(destino, 'w', encoding='utf-8') as f:
-            f.write(f"// Biblioteca padrão instalada localmente: {pacote_nome}\n")
-            f.write(f"write(\"Biblioteca {pacote_nome} carregada com sucesso!\")\n")
-        print(f"[Fallback] Criado pacote padrão local em '{destino}'.")
+            f.write(f"{mensagem('fallback_comment')}: {pacote_nome}\n")
+            f.write(f'write("{mensagem("fallback_loaded", pkg=pacote_nome)}")\n')
+        print(f"[Fallback] {mensagem('fallback', dest=destino)}")
 
 
 # --- 6. BYTECODE COMPILER LAYER (OPCIONAL) ---
 def compilar_para_bytecode(arquivo_path):
-    print(f"--- [Rudy Bytecode Engine] Compilando '{arquivo_path}' para Bytecode otimizado ---")
+    print(mensagem("bytecode_compile", file=arquivo_path))
     with open(arquivo_path, 'r', encoding='utf-8') as f:
         codigo_fonte = f.read()
     
@@ -415,15 +515,15 @@ def compilar_para_bytecode(arquivo_path):
         bc_file.write(marshal.dumps(objeto_bytecode))
         
     t_fim = time.perf_counter()
-    print(f"[Sucesso!] Bytecode gerado e compactado em '{bytecode_path}' ({((t_fim - t_inicio) * 1000):.4f} ms).")
+    print(f"[Success!] {mensagem('bytecode_success', file=bytecode_path)} ({((t_fim - t_inicio) * 1000):.4f} ms).")
     return objeto_bytecode
 
 
 # --- 7. MODO INTERATIVO (REPL SHELL) ---
 def iniciar_repl():
     print("====================================================")
-    print("🐺 Rudy Interactive Shell (v1.0 - Bilingual PT/EN)")
-    print("Digite comandos Rudy ou 'sair' / 'exit' para fechar.")
+    print(f"🐺 {mensagem('repl_title')}")
+    print(mensagem("repl_help"))
     print("====================================================")
     
     runtime = RudyRuntime() # Mantém as variáveis ativas durante a sessão
@@ -434,7 +534,7 @@ def iniciar_repl():
             if not linha:
                 continue
             if linha.lower() in ('exit', 'sair', 'quit'):
-                print("Até logo! 🐺")
+                print(f"{mensagem('repl_bye')} 🐺")
                 break
                 
             parser = Parser([linha])
@@ -442,18 +542,18 @@ def iniciar_repl():
             runtime.executar(ast)
             
         except KeyboardInterrupt:
-            print("\nUse 'sair' ou 'exit' para encerrar o shell.")
+            print(f"\n{mensagem('repl_interrupt')}")
         except Exception as e:
-            print(f"[Erro Rudy] {e}")
+            print(f"{mensagem('rudy_error')} {e}")
 
 
 # --- 8. COMPILADOR / EMPACOTADOR STANDALONE (.EXE) ---
 def compilar_para_executavel(arquivo_path):
-    print(f"--- [Rudy Compiler] Empacotando '{arquivo_path}' para Executável (.exe) ---")
+    print(mensagem("compiler", file=arquivo_path))
     try:
         import PyInstaller
     except ImportError:
-        print("Aviso: O PyInstaller não está instalado. Instalando automaticamente via pip...")
+        print(mensagem("pyinstaller_missing"))
         subprocess.check_call([sys.executable, "-m", "pip", "install", "pyinstaller"])
 
     with open(arquivo_path, 'r', encoding='utf-8') as f:
@@ -674,7 +774,7 @@ if __name__ == "__main__":
     runtime = RudyRuntime()
     runtime.executar(ast)
     t_fim = time.perf_counter()
-    print(f"\\n[Rudy Benchmark] Tempo: {((t_fim - t_inicio) * 1000):.2f} ms")
+    print(f"\\n[Rudy Benchmark] Tempo: {{((t_fim - t_inicio) * 1000):.2f}} ms")
 '''
 
     stub_filename = "rudy_temp_stub.py"
@@ -682,17 +782,21 @@ if __name__ == "__main__":
         f.write(stub_code)
 
     base_nome = os.path.splitext(os.path.basename(arquivo_path))[0]
-    print(f"Gerando executável standalone para '{base_nome}'...")
+    print(f"{mensagem('generating')} '{base_nome}'...")
     subprocess.check_call([sys.executable, "-m", "PyInstaller", "--onefile", "--noconsole", stub_filename])
     
     if os.path.exists(stub_filename):
         os.remove(stub_filename)
         
-    print(f"\n[Sucesso!] Executável gerado na pasta 'dist/' para o programa '{base_nome}'.")
+    print(f"\n[Success!] {mensagem('success_exe')} for '{base_nome}'.")
 
 
 # --- 9. FUNÇÃO PRINCIPAL ---
 def main():
+    localidade_recursos = obter_localidade()
+    if LOCALIDADE != localidade_recursos:
+        globals()["LOCALIDADE"] = localidade_recursos
+
     # Se nenhum argumento for passado ou se usar --repl / -i, abre o REPL interactivo
     if len(sys.argv) < 2 or sys.argv[1] in ('--repl', '-i', 'repl'):
         iniciar_repl()
@@ -702,26 +806,26 @@ def main():
     
     if comando_ou_arquivo in ('install', 'instalar'):
         if len(sys.argv) < 3:
-            print("Erro: Especifique o nome do pacote ou URL da biblioteca.")
+            print(mensagem("missing_arg"))
             return
         rudy_install(sys.argv[2])
         return
 
     arquivo_path = comando_ou_arquivo
     if not os.path.exists(arquivo_path):
-        print(f"Erro: Arquivo '{arquivo_path}' não encontrado.")
+        print(mensagem("file_missing", file=arquivo_path))
         return
         
     # Tratamento da flag de Bytecode (--bytecode / -b)
     if len(sys.argv) >= 3 and sys.argv[2] in ('--bytecode', '-b', 'bytecode'):
         t_inicio = time.perf_counter()
         bc = compilar_bytecode = compilar_para_bytecode(arquivo_path)
-        print("Executando via Rudy Bytecode Virtual Machine...")
+        print(mensagem("bytecode_running"))
         
         exec(bc, {'__builtins__': None}, {'print': print, 'input': input, 'os': os, 'random': random, 'time': time, 'sys': sys})
         
         t_fim = time.perf_counter()
-        print(f"\n[Rudy Benchmark - Bytecode] Tempo total: {((t_fim - t_inicio) * 1000):.2f} ms")
+        print(f"\n[Rudy Benchmark - Bytecode] {mensagem('total_time')}: {((t_fim - t_inicio) * 1000):.2f} ms")
         return
 
     # Tratamento da flag de Compilação Standalone (--build)
@@ -733,7 +837,7 @@ def main():
     with open(arquivo_path, 'r', encoding='utf-8') as f:
         codigo_fonte = f.read()
         
-    print(f"--- Compilando e Executando {arquivo_path} com a Rudy (AST Engine) ---")
+    print(f"--- {mensagem('ast_running', file=arquivo_path)} ---")
     
     tempo_inicio = time.perf_counter()
     
@@ -747,7 +851,7 @@ def main():
     tempo_fim = time.perf_counter()
     tempo_total_ms = (tempo_fim - tempo_inicio) * 1000
     
-    print(f"\n[Rudy Benchmark] Tempo de execução: {tempo_total_ms:.2f} ms")
+    print(f"\n[Rudy Benchmark] {mensagem('execution_time')}: {tempo_total_ms:.2f} ms")
 
 if __name__ == "__main__":
     main()
