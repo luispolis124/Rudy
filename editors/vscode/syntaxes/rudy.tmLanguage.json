@@ -17,6 +17,9 @@
     },
     {
       "include": "#numbers"
+    },
+    {
+      "include": "#operators"
     }
   ],
   "repository": {
@@ -29,7 +32,7 @@
     "keywords": {
       "patterns": [{
         "name": "keyword.control.rudy",
-        "match": "\\b(action|acao|if|se|else|senao|while|enquanto|then|entao|var|use|usar)\\b"
+        "match": "\\b(action|acao|if|se|else|senao|while|enquanto|then|entao|var|use|usar|and|e|or|ou)\\b"
       }]
     },
     "functions": {
@@ -43,12 +46,24 @@
         {
           "name": "string.quoted.double.rudy",
           "begin": "\"",
-          "end": "\""
+          "end": "\"",
+          "patterns": [
+            {
+              "name": "constant.character.escape.rudy",
+              "match": "\\\\."
+            }
+          ]
         },
         {
           "name": "string.quoted.single.rudy",
           "begin": "'",
-          "end": "'"
+          "end": "'",
+          "patterns": [
+            {
+              "name": "constant.character.escape.rudy",
+              "match": "\\\\."
+            }
+          ]
         }
       ]
     },
@@ -56,6 +71,12 @@
       "patterns": [{
         "name": "constant.numeric.rudy",
         "match": "\\b\\d+\\b"
+      }]
+    },
+    "operators": {
+      "patterns": [{
+        "name": "keyword.operator.rudy",
+        "match": "(==|!=|>=|<=|>|<|=|\\+|\\-|\\*|/)"
       }]
     }
   }
