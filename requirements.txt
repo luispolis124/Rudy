@@ -1,0 +1,4 @@
+# Rudy runs on the Python 3 standard library and has no required third-party packages.
+#
+# Optional: install only when using the --build executable compiler.
+pyinstaller>=6.0

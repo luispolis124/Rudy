@@ -1,4 +1,10 @@
 <div align="center">
+  <strong>English locales:</strong>
+  <a href="README.en-US.md">English (US)</a> ·
+  <a href="README.en-UK.md">English (UK)</a>
+</div>
+
+<div align="center">
   <img src="assets/logo-rudy.png" alt="Rudy Logo - Maned Wolf" width="220"/>
 
   # 🐺 Rudy
