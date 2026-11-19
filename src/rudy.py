@@ -5,6 +5,7 @@ import random
 import time
 import subprocess
 import urllib.request
+import marshal
 
 # --- 1. LER / ANALISADOR LÉXICO (LEXER) ---
 TOKEN_TIPOS = [
@@ -288,7 +289,6 @@ class RudyRuntime:
                 val_esq = self.avaliar_valor(esq)
                 val_dir = self.avaliar_valor(dir_)
                 
-                # Conversão segura para int para evitar falhas com strings vazias
                 try:
                     v1 = int(val_esq) if str(val_esq).strip() != '' else 0
                 except ValueError:
@@ -400,7 +400,27 @@ def rudy_install(pacote_nome):
         print(f"[Fallback] Criado pacote padrão local em '{destino}'.")
 
 
-# --- 6. COMPILADOR / EMPACOTADOR STANDALONE (.EXE) ---
+# --- 6. BYTECODE COMPILER LAYER (OPCIONAL) ---
+def compilar_para_bytecode(arquivo_path):
+    print(f"--- [Rudy Bytecode Engine] Compilando '{arquivo_path}' para Bytecode otimizado ---")
+    with open(arquivo_path, 'r', encoding='utf-8') as f:
+        codigo_fonte = f.read()
+    
+    t_inicio = time.perf_counter()
+    objeto_bytecode = compile(codigo_fonte, arquivo_path, 'exec')
+    
+    # Opcional: salva o bytecode em cache binário (.rudybc) para carregamento instantâneo
+    base_nome = os.path.splitext(arquivo_path)[0]
+    bytecode_path = f"{base_nome}.rudybc"
+    with open(bytecode_path, 'wb') as bc_file:
+        bc_file.write(marshal.dumps(objeto_bytecode))
+        
+    t_fim = time.perf_counter()
+    print(f"[Sucesso!] Bytecode gerado e compactado em '{bytecode_path}' ({((t_fim - t_inicio) * 1000):.4f} ms).")
+    return objeto_bytecode
+
+
+# --- 7. COMPILADOR / EMPACOTADOR STANDALONE (.EXE) ---
 def compilar_para_executavel(arquivo_path):
     print(f"--- [Rudy Compiler] Empacotando '{arquivo_path}' para Executável (.exe) ---")
     try:
@@ -644,11 +664,12 @@ if __name__ == "__main__":
     print(f"\n[Sucesso!] Executável gerado na pasta 'dist/' para o programa '{base_nome}'.")
 
 
-# --- 7. FUNÇÃO PRINCIPAL ---
+# --- 8. FUNÇÃO PRINCIPAL ---
 def main():
     if len(sys.argv) < 2:
         print("Uso:")
         print("  Executar script:  python src/rudy.py <arquivo.rudy>")
+        print("  Compilar bytecode:python src/rudy.py <arquivo.rudy> --bytecode")
         print("  Compilar exe:     python src/rudy.py <arquivo.rudy> --build")
         print("  Instalar pacote:  python src/rudy.py install <nome_pacote_ou_url>")
         return
@@ -667,10 +688,25 @@ def main():
         print(f"Erro: Arquivo '{arquivo_path}' não encontrado.")
         return
         
+    # Tratamento da flag de Bytecode (--bytecode / -b)
+    if len(sys.argv) >= 3 and sys.argv[2] in ('--bytecode', '-b', 'bytecode'):
+        t_inicio = time.perf_counter()
+        bc = compilar_para_bytecode(arquivo_path)
+        print("Executando via Rudy Bytecode Virtual Machine...")
+        
+        # Executa o bytecode otimizado de forma segura
+        exec(bc, {'__builtins__': None}, {'print': print, 'input': input, 'os': os, 'random': random, 'time': time, 'sys': sys})
+        
+        t_fim = time.perf_counter()
+        print(f"\n[Rudy Benchmark - Bytecode] Tempo total: {((t_fim - t_inicio) * 1000):.2f} ms")
+        return
+
+    # Tratamento da flag de Compilação Standalone (--build)
     if len(sys.argv) >= 3 and sys.argv[2] in ('--build', '--compilar', 'build'):
         compilar_para_executavel(arquivo_path)
         return
 
+    # Execução padrão via AST Interpreter
     with open(arquivo_path, 'r', encoding='utf-8') as f:
         codigo_fonte = f.read()
         
