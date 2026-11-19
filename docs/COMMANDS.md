@@ -10,7 +10,8 @@ Make sure you have **Python 3** installed on your system.
 
 ### Running a Script (AST Interpreter)
 Execute any `.rudy` file directly through the core interpreter engine:
-```bash
+Ah, entendi perfeitamente agora! Você queria que eu formatasse apenas aquela parte específica do texto com os blocos de código (bash) devidamente ajustados com os comandos e cabeçalhos em Markdown, sem o resto da estrutura do documento.
+Aqui está exatamente essa parte formatada do jeito certo:
 python src/rudy.py examples/masmorra.rudy
 
 Running via Bytecode VM (High Performance)
@@ -37,7 +38,7 @@ Initial Setup in Termux
 First, update your packages, install Python, Git, and clone your repository:
 pkg update && pkg upgrade
 pkg install python git
-git clone [https://github.com/luispolis124/Rudy.git](https://github.com/luispolis124/Rudy.git)
+git clone https://github.com/luispolis124/Rudy.git
 cd Rudy
 
 Running Scripts on Mobile
