@@ -409,7 +409,6 @@ def compilar_para_bytecode(arquivo_path):
     t_inicio = time.perf_counter()
     objeto_bytecode = compile(codigo_fonte, arquivo_path, 'exec')
     
-    # Opcional: salva o bytecode em cache binário (.rudybc) para carregamento instantâneo
     base_nome = os.path.splitext(arquivo_path)[0]
     bytecode_path = f"{base_nome}.rudybc"
     with open(bytecode_path, 'wb') as bc_file:
@@ -420,7 +419,35 @@ def compilar_para_bytecode(arquivo_path):
     return objeto_bytecode
 
 
-# --- 7. COMPILADOR / EMPACOTADOR STANDALONE (.EXE) ---
+# --- 7. MODO INTERATIVO (REPL SHELL) ---
+def iniciar_repl():
+    print("====================================================")
+    print("🐺 Rudy Interactive Shell (v1.0 - Bilingual PT/EN)")
+    print("Digite comandos Rudy ou 'sair' / 'exit' para fechar.")
+    print("====================================================")
+    
+    runtime = RudyRuntime() # Mantém as variáveis ativas durante a sessão
+    
+    while True:
+        try:
+            linha = input("\nrudy> ").strip()
+            if not linha:
+                continue
+            if linha.lower() in ('exit', 'sair', 'quit'):
+                print("Até logo! 🐺")
+                break
+                
+            parser = Parser([linha])
+            ast = parser.parse()
+            runtime.executar(ast)
+            
+        except KeyboardInterrupt:
+            print("\nUse 'sair' ou 'exit' para encerrar o shell.")
+        except Exception as e:
+            print(f"[Erro Rudy] {e}")
+
+
+# --- 8. COMPILADOR / EMPACOTADOR STANDALONE (.EXE) ---
 def compilar_para_executavel(arquivo_path):
     print(f"--- [Rudy Compiler] Empacotando '{arquivo_path}' para Executável (.exe) ---")
     try:
@@ -664,14 +691,11 @@ if __name__ == "__main__":
     print(f"\n[Sucesso!] Executável gerado na pasta 'dist/' para o programa '{base_nome}'.")
 
 
-# --- 8. FUNÇÃO PRINCIPAL ---
+# --- 9. FUNÇÃO PRINCIPAL ---
 def main():
-    if len(sys.argv) < 2:
-        print("Uso:")
-        print("  Executar script:  python src/rudy.py <arquivo.rudy>")
-        print("  Compilar bytecode:python src/rudy.py <arquivo.rudy> --bytecode")
-        print("  Compilar exe:     python src/rudy.py <arquivo.rudy> --build")
-        print("  Instalar pacote:  python src/rudy.py install <nome_pacote_ou_url>")
+    # Se nenhum argumento for passado ou se usar --repl / -i, abre o REPL interactivo
+    if len(sys.argv) < 2 or sys.argv[1] in ('--repl', '-i', 'repl'):
+        iniciar_repl()
         return
         
     comando_ou_arquivo = sys.argv[1]
@@ -691,10 +715,9 @@ def main():
     # Tratamento da flag de Bytecode (--bytecode / -b)
     if len(sys.argv) >= 3 and sys.argv[2] in ('--bytecode', '-b', 'bytecode'):
         t_inicio = time.perf_counter()
-        bc = compilar_para_bytecode(arquivo_path)
+        bc = compilar_bytecode = compilar_para_bytecode(arquivo_path)
         print("Executando via Rudy Bytecode Virtual Machine...")
         
-        # Executa o bytecode otimizado de forma segura
         exec(bc, {'__builtins__': None}, {'print': print, 'input': input, 'os': os, 'random': random, 'time': time, 'sys': sys})
         
         t_fim = time.perf_counter()
